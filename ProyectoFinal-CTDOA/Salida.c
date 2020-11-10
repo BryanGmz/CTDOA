@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,33 +8,33 @@ float heap[10000];
 float stack[10000];
 int p;
 int h;
-int temp0;
+char temp0;
 int temp1;
-float temp2;
-int temp3;
+int temp2;
+char temp3;
 int temp4;
-float temp5;
+int temp5;
 int temp6;
 int temp7;
-float temp8;
+int temp8;
 int temp9;
-int temp10;
+float temp10;
 int temp11;
-int temp12;
+float temp12;
 int temp13;
-float temp14;
+int temp14;
 int temp15;
 int temp16;
 int temp17;
-float temp18;
+int temp18;
 int temp19;
 int temp20;
 int temp21;
 float temp22;
-int temp23;
-float temp24;
-int temp25;
-float temp26;
+float temp23;
+int temp24;
+float temp25;
+int temp26;
 int temp27;
 int temp28;
 int temp29;
@@ -41,19 +43,19 @@ int temp31;
 int temp32;
 int temp33;
 int temp34;
-int temp35;
+float temp35;
 int temp36;
 float temp37;
 int temp38;
 float temp39;
 int temp40;
-int temp41;
+float temp41;
 int temp42;
 float temp43;
 int temp44;
-int temp45;
+float temp45;
 int temp46;
-int temp47;
+float temp47;
 int temp48;
 int temp49;
 float temp50;
@@ -64,247 +66,201 @@ int temp54;
 int temp55;
 float temp56;
 int temp57;
-int temp58;
+float temp58;
 int temp59;
 int temp60;
 int temp61;
-int temp62;
+float temp62;
 int temp63;
-float temp64;
-int temp65;
+int temp64;
+float temp65;
 int temp66;
 int temp67;
-float temp68;
-int temp69;
+int temp68;
+char temp69;
 int temp70;
-float temp71;
-int temp72;
+int temp71;
+float temp72;
 int temp73;
 int temp74;
-float temp75;
-int temp76;
+char temp75;
+char temp76;
 int temp77;
-float temp78;
-int temp79;
-int temp80;
-int temp81;
-float temp82;
-int temp83;
-int temp84;
-int temp85;
-float temp86;
-int temp87;
-int temp88;
-float temp89;
-int temp90;
-int temp91;
-float temp92;
-int temp93;
-int temp94;
-float temp95;
-int temp96;
-int temp97;
-int temp98;
-float temp99;
-int temp100;
-int temp101;
-int temp102;
-float temp103;
-int temp104;
-int temp105;
-float temp106;
-int temp107;
-int temp108;
-int temp109;
-float temp110;
-int temp111;
-int temp112;
-int temp113;
-float temp114;
-int temp115;
-int temp116;
-int temp117;
-float temp118;
-int temp119;
-int temp120;
-float temp121;
-int temp122;
-int temp123;
-int temp124;
-float temp125;
-int temp126;
-int temp127;
 
-void JAVA_Calculadora_Calculadora(){
-temp0 = p + 1;
-stack[temp0] = h;
-h = h + 3;
-temp1 = p + 1;
-temp2 = stack[temp1];
-temp3 = temp2 + 0;
-heap[temp3] = 1;
-temp4 = p + 1;
-temp5 = stack[temp4];
-temp6 = temp5 + 1;
-heap[temp6] = 1;
-temp7 = p + 1;
-temp8 = stack[temp7];
-temp9 = temp8 + 2;
-heap[temp9] = 3;
+void PY_Continuar_float(){
+printf("Desea Repetir el Proceso [s]i o [n]o");
+printf("\n");
+printf("eee");
+scanf(" %c", &temp0);
+temp1 = p + 3;
+stack[temp1] = temp0;
+temp2 = p + 3;
+temp3 = stack[temp2];
+temp4 = p + 0;
+stack[temp4] = temp3;
+goto etqFinReturn;
+etqFinReturn:
 printf(" "); 
 }
 
-void JAVA_Calculadora_pedirOperador_int(){
-temp10 = p + 2;
-temp11 = stack[temp10];
-if (temp11 == 1) goto etq0;
-goto etq1;
+//Declaraciones
+void PY_Pruebas_float(){
+temp5 = p + 3;
+stack[temp5] = 1;
+//Asignacion
+temp6 = p + 4;
+stack[temp6] = 3;
+//Asignacion Op1
+temp7 = p + 4;
+temp8 = stack[temp7];
+temp9 = p + 3;
+stack[temp9] = temp8;
+temp11 = p + 2;
+temp12 = stack[temp11];
+temp10 = temp12 + 3;
+//Asignacion input
+temp13 = p + 5;
+stack[temp13] = temp10;
+//while
+scanf("%d", &temp14);
+temp15 = p + 3;
+stack[temp15] = temp14;
 etq0:
-printf("Ingrese primer numero: ");
-scanf("%d", &temp12);
-temp13 = p + 1;
-temp14 = stack[temp13];
-temp15 = temp14 + 0;
-heap[temp15] = temp12;
-goto etqf0;
+temp16 = p + 3;
+temp17 = stack[temp16];
+if (temp17 == 6) goto etq1;
+goto etq2;
 etq1:
-printf("Ingrese segundo numero: ");
-scanf("%d", &temp16);
-temp17 = p + 1;
-temp18 = stack[temp17];
-temp19 = temp18 + 1;
-heap[temp19] = temp16;
+printf("Print While");
+printf("\n");
+//If
+goto etq0;
+etq2:
+temp18 = p + 3;
+temp19 = stack[temp18];
+if (temp19 != 6) goto etq3;
+goto etq4;
+etq3:
+printf("Print If");
+printf("\n");
+goto etqf0;
+etq4:
+if (6 == 7) goto etq5;
+goto etq6;
+etq5:
+printf("Print Elif");
+printf("\n");
+goto etqf0;
+etq6:
+printf("Print Else");
+printf("\n");
+//For Declaracion
 goto etqf0;
 etqf0:
-printf(" "); 
-}
-
-void JAVA_Calculadora_pedirOperacion(){
-printf("Ingrese operacion");
-scanf("%d", &temp20);
-temp21 = p + 1;
+temp20 = p + 6;
+stack[temp20] = 1;
+etq7:
+temp21 = p + 6;
 temp22 = stack[temp21];
-temp23 = temp22 + 2;
-heap[temp23] = temp20;
-printf(" "); 
-}
-
-void JAVA_Calculadora_sumar(){
-temp25 = p + 1;
-temp26 = stack[temp25];
-temp27 = temp26 + 0;
-temp28 = heap[temp27];
-temp29 = p + 1;
-temp30 = stack[temp29];
-temp31 = temp30 + 1;
-temp32 = heap[temp31];
-temp24 = temp28 + temp32;
-temp33 = p + 4;
-stack[temp33] = temp24;
-temp34 = p + 4;
-temp35 = stack[temp34];
-temp36 = p + 0;
-stack[temp36] = temp35;
-goto etqFinReturn;
-etqFinReturn:
-printf(" "); 
-}
-
-void JAVA_Calculadora_restar(){
-temp38 = p + 1;
-temp39 = stack[temp38];
-temp40 = temp39 + 0;
-temp41 = heap[temp40];
-temp42 = p + 1;
-temp43 = stack[temp42];
-temp44 = temp43 + 1;
-temp45 = heap[temp44];
-temp37 = temp41 - temp45;
-temp46 = p + 4;
-stack[temp46] = temp37;
-temp47 = p + 4;
-temp48 = stack[temp47];
-temp49 = p + 0;
-stack[temp49] = temp48;
-goto etqFinReturn;
-etqFinReturn:
-printf(" "); 
-}
-
-void JAVA_Calculadora_potencia(){
-temp51 = p + 1;
-temp52 = stack[temp51];
-temp53 = temp52 + 0;
-temp54 = heap[temp53];
-temp55 = p + 1;
-temp56 = stack[temp55];
-temp57 = temp56 + 1;
-temp58 = heap[temp57];
-temp50 = temp54 * temp58;
-temp59 = p + 4;
-stack[temp59] = temp50;
-temp60 = p + 4;
-temp61 = stack[temp60];
-temp62 = p + 0;
-stack[temp62] = temp61;
-goto etqFinReturn;
-etqFinReturn:
-printf(" "); 
-}
-
-void JAVA_Calculadora_operar_int(){
-temp63 = p + 1;
-temp64 = stack[temp63];
-temp65 = temp64 + 2;
-temp66 = heap[temp65];
-if (temp66 != 1) goto etq2;
-p = p + 5;
-JAVA_Calculadora_sumar();
-temp67 = p + 0;
-temp68 = stack[temp67];
-p = p - 5;
-temp69 = p + 0;
-stack[temp69] = temp68;
-goto etqFinReturn;
+if (temp22 < 4) goto etq9;
 goto etqf1;
-etq2:
-temp70 = p + 1;
-temp71 = stack[temp70];
-temp72 = temp71 + 2;
-temp73 = heap[temp72];
-if (temp73 != 2) goto etq3;
-p = p + 5;
-JAVA_Calculadora_restar();
-temp74 = p + 0;
-temp75 = stack[temp74];
-p = p - 5;
-temp76 = p + 0;
-stack[temp76] = temp75;
-goto etqFinReturn;
-goto etqf1;
-etq3:
-temp77 = p + 1;
-temp78 = stack[temp77];
-temp79 = temp78 + 2;
-temp80 = heap[temp79];
-if (temp80 != 3) goto etq4;
-p = p + 5;
-JAVA_Calculadora_potencia();
-temp81 = p + 0;
-temp82 = stack[temp81];
-p = p - 5;
-temp83 = p + 0;
-stack[temp83] = temp82;
-goto etqFinReturn;
-goto etqf1;
-etq4:
-printf("operacion incorrecta! ");
+etq8:
+temp24 = p + 6;
+temp25 = stack[temp24];
+temp23 = 3 + temp25;
+temp26 = p + 6;
+stack[temp26] = temp23;
+goto etq7;
+etq9:
+printf("Print For Declaracion");
 printf("\n");
-temp84 = p + 0;
-stack[temp84] = 1;
-goto etqFinReturn;
-goto etqf1;
+//For sin declarar
+goto etq8;
 etqf1:
+temp27 = p + 3;
+stack[temp27] = 1;
+etq10:
+temp28 = p + 3;
+temp29 = stack[temp28];
+if (temp29 < 4) goto etq12;
+goto etqf3;
+etq11:
+temp31 = p + 3;
+temp32 = stack[temp31];
+temp30 = 3 + temp32;
+temp33 = p + 3;
+stack[temp33] = temp30;
+goto etq10;
+etq12:
+printf("Print For No Declarado");
+printf("\n");
+goto etq11;
+etqf3:
+printf(" "); 
+}
+
+void PY_DIVIDIR_float_float(){
+temp34 = p + 2;
+temp35 = stack[temp34];
+p = p + 4;
+temp36 = p + 2;
+stack[temp36] = temp35;
+PY_Pruebas_float();
+p = p - 4;
+temp38 = p + 2;
+temp39 = stack[temp38];
+temp40 = p + 3;
+temp41 = stack[temp40];
+temp37 = temp39 / temp41;
+temp42 = p + 0;
+stack[temp42] = temp37;
+goto etqFinReturn;
+etqFinReturn:
+printf(" "); 
+}
+
+//Operacion
+void PY_MODULO_float_float(){
+temp44 = p + 2;
+temp45 = stack[temp44];
+temp46 = p + 3;
+temp47 = stack[temp46];
+temp43 = temp45 / temp47;
+//Llamada
+temp48 = p + 4;
+stack[temp48] = temp43;
+temp49 = p + 2;
+temp50 = stack[temp49];
+temp51 = p + 3;
+temp52 = stack[temp51];
+p = p + 6;
+temp53 = p + 2;
+stack[temp53] = temp50;
+temp54 = p + 3;
+stack[temp54] = temp52;
+PY_DIVIDIR_float_float();
+//Llamada Asignacion
+p = p - 6;
+temp55 = p + 2;
+temp56 = stack[temp55];
+temp57 = p + 3;
+temp58 = stack[temp57];
+p = p + 6;
+temp59 = p + 2;
+stack[temp59] = temp56;
+temp60 = p + 3;
+stack[temp60] = temp58;
+PY_DIVIDIR_float_float();
+temp61 = p + 0;
+temp62 = stack[temp61];
+p = p - 6;
+temp63 = p + 5;
+stack[temp63] = temp62;
+temp64 = p + 4;
+temp65 = stack[temp64];
+temp66 = p + 0;
+stack[temp66] = temp65;
+goto etqFinReturn;
 etqFinReturn:
 printf(" "); 
 }
@@ -312,113 +268,27 @@ printf(" ");
 int main(){
 p = 0;
 h = 0;
-p = p + 5;
-JAVA_Calculadora_Calculadora();
-temp85 = p + 1;
-temp86 = stack[temp85];
-p = p - 5;
-temp87 = p + 2;
-stack[temp87] = temp86;
-p = p + 5;
-JAVA_Calculadora_Calculadora();
-temp88 = p + 1;
-temp89 = stack[temp88];
-p = p - 5;
-temp90 = p + 3;
-stack[temp90] = temp89;
-p = p + 5;
-JAVA_Calculadora_Calculadora();
-temp91 = p + 1;
-temp92 = stack[temp91];
-p = p - 5;
-temp93 = p + 4;
-stack[temp93] = temp92;
-temp94 = p + 2;
-temp95 = stack[temp94];
-p = p + 5;
-temp96 = p + 1;
-stack[temp96] = temp95;
-temp97 = p + 2;
-stack[temp97] = 1;
-JAVA_Calculadora_pedirOperador_int();
-p = p - 5;
-temp98 = p + 2;
-temp99 = stack[temp98];
-p = p + 5;
-temp100 = p + 1;
-stack[temp100] = temp99;
-temp101 = p + 2;
-stack[temp101] = 2;
-JAVA_Calculadora_pedirOperador_int();
-p = p - 5;
-temp102 = p + 2;
-temp103 = stack[temp102];
-p = p + 5;
-temp104 = p + 1;
-stack[temp104] = temp103;
-JAVA_Calculadora_pedirOperacion();
-p = p - 5;
-printf("el total es");
+temp67 = p + 2;
+stack[temp67] = 's';
+temp68 = p + 2;
+temp69 = stack[temp68];
+p = p + 3;
+temp70 = p + 2;
+stack[temp70] = temp69;
+PY_Continuar_float();
+temp71 = p + 0;
+temp72 = stack[temp71];
+p = p - 3;
+temp73 = p + 2;
+stack[temp73] = temp72;
+temp74 = p + 2;
+temp75 = stack[temp74];
+printf(" %f ", temp75);
 printf("\n");
-temp105 = p + 2;
-temp106 = stack[temp105];
-p = p + 5;
-temp107 = p + 1;
-stack[temp107] = temp106;
-temp108 = p + 2;
-stack[temp108] = 0;
-JAVA_Calculadora_operar_int();
-printf(" %d ", operar);
-printf("\n");
-temp109 = p + 3;
-temp110 = stack[temp109];
-p = p + 5;
-temp111 = p + 1;
-stack[temp111] = temp110;
-temp112 = p + 2;
-stack[temp112] = 1;
-JAVA_Calculadora_pedirOperador_int();
-p = p - 5;
-temp113 = p + 3;
-temp114 = stack[temp113];
-p = p + 5;
-temp115 = p + 1;
-stack[temp115] = temp114;
-temp116 = p + 2;
-stack[temp116] = 2;
-JAVA_Calculadora_pedirOperador_int();
-p = p - 5;
-temp117 = p + 3;
-temp118 = stack[temp117];
-p = p + 5;
-temp119 = p + 1;
-stack[temp119] = temp118;
-JAVA_Calculadora_pedirOperacion();
-p = p - 5;
-printf("el total es");
-printf("\n");
-temp120 = p + 3;
-temp121 = stack[temp120];
-p = p + 5;
-temp122 = p + 1;
-stack[temp122] = temp121;
-temp123 = p + 2;
-stack[temp123] = 0;
-JAVA_Calculadora_operar_int();
-printf(" %d ", operar);
-printf("\n");
-printf("el total es");
-printf("\n");
-temp124 = p + 4;
-temp125 = stack[temp124];
-p = p + 5;
-temp126 = p + 1;
-stack[temp126] = temp125;
-temp127 = p + 2;
-stack[temp127] = 0;
-JAVA_Calculadora_operar_int();
-printf(" %d ", operar);
-printf("\n");
+getchar();
+scanf("%f", &temp76);
+temp77 = p + 2;
+stack[temp77] = temp76;
 printf(" "); 
 }
 

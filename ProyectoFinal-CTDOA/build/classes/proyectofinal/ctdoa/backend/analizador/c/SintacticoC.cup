@@ -159,8 +159,8 @@ cod_vb ::=
             parser.msJP.setContadorLineas(0);
         } catch (Exception ex) {    
             parser.msJP.setContadorLineas(0);
-            ex.printStackTrace();
-            //System.out.println(ex.toString());
+            //ex.printStackTrace();
+            System.out.println(ex.toString());
             JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Visual Basic.", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
     :}
@@ -178,7 +178,7 @@ cod_py ::=
             sintacticoPython.setContadorLineas(eright);
             sintacticoPython.parse();
         } catch( Exception ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
             System.out.println(ex.toString());
             JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Python.", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
@@ -198,7 +198,7 @@ cod_java ::=
             sintacticoj.setFrameCTDOA(parser.frameCTDOA);
             sintacticoj.parse();
         } catch( Exception ex) { 
-            ex.printStackTrace();
+            //ex.printStackTrace();
             parser.msJP.setContadorLineas(0);
             System.out.println(ex.toString());
             JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Java.", "ERROR", JOptionPane.ERROR_MESSAGE);
@@ -852,38 +852,14 @@ printf ::=
 ;
 
 valores ::=
-    | llamada_fp:a          
-    {: 
-        if(a != null) {
-            Tipo tipo = ((Simbolo) a).getTipoFuncion();
-            if(tipo != null && tipo.getNombre().equals("Funcion")) {
-                RESULT = a;
-            } else {
-                parser.msJP.errorSemantico(aleft, aright, "Asignacion", "Error, la instancia es un metodo y no puede asignarse.");
-                RESULT = null;
-            }
-        }
-    :}
-    | ID:e                            {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
+    ID:e                            {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
     | ID:e vp:a                     {:RESULT = parser.msJP.listaPrintfVal(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}
     | AMPERSAND ID:e                {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
     | AMPERSAND ID:e vp:a           {:RESULT = parser.msJP.listaPrintfVal(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}
 ;
 
 vp ::=
-    COMA llamada_fp:a          
-    {: 
-        if(a != null) {
-            Tipo tipo = ((Simbolo) a).getTipoFuncion();
-            if(tipo != null && tipo.getNombre().equals("Funcion")) {
-                RESULT = a;
-            } else {
-                parser.msJP.errorSemantico(aleft, aright, "Asignacion", "Error, la instancia es un metodo y no puede asignarse.");
-                RESULT = null;
-            }
-        }
-    :}
-    | COMA ID:e                       {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
+    COMA ID:e                       {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
     | vp:a COMA ID:e                {:RESULT = parser.msJP.listaPrintf(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}    
     | COMA AMPERSAND ID:e           {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
     | vp:a COMA AMPERSAND ID:e      {:RESULT = parser.msJP.listaPrintf(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}    

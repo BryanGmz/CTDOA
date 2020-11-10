@@ -42,7 +42,7 @@ public class ManejadorEjecutarCodigo {
             Runtime rt = Runtime.getRuntime();
             rt.exec(ejecutar);
             Thread.sleep(500);
-            rt.exec("gnome-terminal -e ./Salida");
+            rt.exec("gnome-terminal hold -e ./Salida");
         } catch (IOException | InterruptedException ex) {
             Logger.getLogger(ManejadorEjecutarCodigo.class.getName()).log(Level.SEVERE, null, ex);
         }

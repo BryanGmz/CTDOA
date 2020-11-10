@@ -159,8 +159,8 @@ cod_vb ::=
             parser.msJP.setContadorLineas(0);
         } catch (Exception ex) {    
             parser.msJP.setContadorLineas(0);
-            ex.printStackTrace();
-            //System.out.println(ex.toString());
+            //ex.printStackTrace();
+            System.out.println(ex.toString());
             JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Visual Basic.", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
     :}
@@ -178,7 +178,7 @@ cod_py ::=
             sintacticoPython.setContadorLineas(eright);
             sintacticoPython.parse();
         } catch( Exception ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
             System.out.println(ex.toString());
             JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Python.", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
@@ -198,7 +198,7 @@ cod_java ::=
             sintacticoj.setFrameCTDOA(parser.frameCTDOA);
             sintacticoj.parse();
         } catch( Exception ex) { 
-            ex.printStackTrace();
+            //ex.printStackTrace();
             parser.msJP.setContadorLineas(0);
             System.out.println(ex.toString());
             JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Java.", "ERROR", JOptionPane.ERROR_MESSAGE);
