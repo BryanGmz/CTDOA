@@ -8,6 +8,7 @@ package proyectofinal.ctdoa.backend.manejadores;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java_cup.runtime.Symbol;
 import javax.swing.JOptionPane;
 import proyectofinal.ctdoa.backend.objetos.*;
 import proyectofinal.ctdoa.frontend.gui.FrameCTDOA;
@@ -20,8 +21,10 @@ public class ManejadorSintacticoJP {
     
     private static ManejadorSintacticoJP manejadorSintactico;
     private static ManejadorCuartetos manejadorCuartetos = ManejadorCuartetos.getInstancia();
+    private static ManejadorArreglos manejadorArreglos = ManejadorArreglos.getInstancia();
+    private static ManejadorTablaPila manejadorTablaPila = ManejadorTablaPila.getInstancia();
     private FrameCTDOA frameCTDOA;
-    private static TablaSimbolos tablaSimbolos;
+    private TablaSimbolos tablaSimbolos;
     private int contadorAmbitos;
     private int contadorLineas;
     
@@ -73,20 +76,36 @@ public class ManejadorSintacticoJP {
         if (frameCTDOA == null) {
             JOptionPane.showMessageDialog(null, "Ups, algo salio mal, vuelve a intentarlo.", "ERROR", JOptionPane.ERROR_MESSAGE);
         } else {
-            if (mensaje.isEmpty()) {
+            if (left == -1 && right == -1 && value == null) {
                 frameCTDOA.addErrores(
-                "\nError de Sintaxis: " 
-                + "\n\tLinea #:                 << " + (right + 1 + contadorLineas) + " >>"
-                + "\n\tColumna #                << " + (left + 1) + " >>"
-                + "\n\tToken NO Reconocido:     << " + (value) + " >>" );
+                    "\nError de Sintaxis: " 
+                    + "\n\tLinea #:                 << " + (right + 1 + contadorLineas) + " >>"
+                    + "\n\tColumna #                << " + (left + 1) + " >>"
+                    + "\n\tToken:     << Intrucciones >>"
+                    + "\n\tMensaje (Informacion): "
+                    + "\n\t\t-> Error en las instrucciones del programa principal.");
             } else {
-                frameCTDOA.addErrores(
-                "\nError de Sintaxis: " 
-                + "\n\tLinea #:                 << " + (right + 1 + contadorLineas) + " >>"
-                + "\n\tColumna #                << " + (left + 1) + " >>"
-                + "\n\tToken NO Reconocido:     << " + (value) + " >>" 
-                + "\n\tMensaje (Informacion): "
-                + "\n\t\t-> " + mensaje);
+                Object valor;
+                if (value != null && value instanceof Symbol) {
+                    valor = ((Symbol) value).value;
+                } else {
+                    valor = value;
+                }
+                if (mensaje.isEmpty()) {
+                    frameCTDOA.addErrores(
+                    "\nError de Sintaxis: " 
+                    + "\n\tLinea #:                 << " + (right + 1 + contadorLineas) + " >>"
+                    + "\n\tColumna #                << " + (left + 1) + " >>"
+                    + "\n\tToken:     << " + (valor) + " >>" );
+                } else {
+                    frameCTDOA.addErrores(
+                    "\nError de Sintaxis: " 
+                    + "\n\tLinea #:                 << " + (right + 1 + contadorLineas) + " >>"
+                    + "\n\tColumna #                << " + (left + 1) + " >>"
+                    + "\n\tToken:       << " + (valor) + " >>" 
+                    + "\n\tMensaje (Informacion): "
+                    + "\n\t\t-> " + mensaje);
+                }
             }
         }
     }
@@ -111,7 +130,30 @@ public class ManejadorSintacticoJP {
         } return null;
     }
     
+    public List<Simbolo> listaPrintf(Object a, Object e){
+        List<Simbolo> lista = new ArrayList<>();
+        if (a instanceof Simbolo) {
+            lista.add((Simbolo) a);
+        } else {
+            lista.addAll((List<Simbolo>) a);
+        }
+        if (e != null) {
+            lista.add((Simbolo) e);
+        } return lista;
+    }
     
+    public List<Simbolo> listaPrintfVal(Object a, Object e){
+        List<Simbolo> lista = new ArrayList<>();
+        if (e != null) {
+            lista.add((Simbolo) e);
+        }
+        if (a instanceof Simbolo) {
+            lista.add((Simbolo) a);
+        } else {
+            lista.addAll((List<Simbolo>) a);
+        }
+        return lista;
+    }
     
     public List<Simbolo> lista(Object a, Object e){
         List<Simbolo> lista = new ArrayList<>();
@@ -123,7 +165,11 @@ public class ManejadorSintacticoJP {
             }
         }
         if (e != null) {
-            lista.add((Simbolo) e);
+            if (e instanceof Simbolo) { 
+                lista.add((Simbolo) e);
+            } else  {   
+                lista.addAll((List<Simbolo>) e);
+            }
         }
         return lista;
     }
@@ -176,18 +222,27 @@ public class ManejadorSintacticoJP {
      */
     
 
-    public Object declararVariablesGlobales(Simbolo s, int l, int r){
+    public Object declararVariablesGlobales(Simbolo s, int l, int r) throws CloneNotSupportedException{
         Tipo tipo = s.getTipo();
+        ManejadorHeap manejadorHeap = ManejadorHeap.getInstancia();
         if (s.getValor() instanceof Simbolo) {
             if (((Simbolo) s.getValor()).getTipo() == null) {
                 ((Simbolo) s.getValor()).setTipo(tipo);
                 ((Simbolo) s.getValor()).setAmbito(0);
+                ((Simbolo) s.getValor()).setGlobal(true);
                 if (tablaSimbolos.buscarPorId(((Simbolo) s.getValor()).getId()) == null) {
-                    tablaSimbolos.agregarTablaSimbolos(((Simbolo) s.getValor()));
+                    tablaSimbolos.agregarTablaSimbolos((Simbolo) s.getValor());
                     if (s.getId() != null && !s.getId().isEmpty()) {
-                        auxiliarVariable(s);
+                        auxiliarVariableInstancia(s);
                     } else {
-                        auxiliarVariable(((Simbolo) s.getValor()));
+                        auxiliarVariableInstancia((Simbolo) s.getValor());
+                    }
+                    if (!manejadorHeap.isJava()) {
+                        Simbolo sAux =  (Simbolo) s.getValor();
+                        if ( sAux.getValor() != null ) {
+                            sAux = (Simbolo) sAux.getValor();
+                            ((Simbolo) s.getValor()).setCuarteto(manejadorCuartetos.asignacionCuarteto(sAux, (Simbolo) s.getValor()));
+                        }
                     }
                     return ((Simbolo) s.getValor());
                 } else {
@@ -198,12 +253,20 @@ public class ManejadorSintacticoJP {
                 if (tipo.isFatherOf(s.getTipo().getSymbol())) {
                     ((Simbolo) s.getValor()).setTipo(tipo);
                     ((Simbolo) s.getValor()).setAmbito(0);
+                    ((Simbolo) s.getValor()).setGlobal(true);
                     if (tablaSimbolos.buscarPorId(((Simbolo) s.getValor()).getId()) == null) {
                         tablaSimbolos.agregarTablaSimbolos(((Simbolo) s.getValor()));
                         if (s.getId() != null && !s.getId().isEmpty()) {
-                            auxiliarVariable(s);
+                            auxiliarVariableInstancia(s);
                         } else {
-                            auxiliarVariable(((Simbolo) s.getValor()));
+                            auxiliarVariableInstancia( (Simbolo) s.getValor());
+                        }
+                        if (!manejadorHeap.isJava()) {
+                            Simbolo sAux =  (Simbolo) s.getValor();
+                            if ( sAux.getValor() != null ) {
+                                sAux = (Simbolo) sAux.getValor();
+                                ((Simbolo) s.getValor()).setCuarteto(manejadorCuartetos.asignacionCuarteto(sAux, (Simbolo) s.getValor()));
+                            }
                         }
                         return ((Simbolo) s.getValor());
                     } else {
@@ -219,12 +282,20 @@ public class ManejadorSintacticoJP {
             List<Simbolo> retornar = new ArrayList<>();
             for (Simbolo simbolo : (List<Simbolo>) s.getValor()) {
                 simbolo.setAmbito(0);
-                if (((Simbolo) simbolo.getValor()).getTipo() == null) {
+                System.out.println("Simbolo " + simbolo);
+                if (simbolo.getTipo() == null) {
                     simbolo.setTipo(tipo);
+                    simbolo.setGlobal(true);
                     if (tablaSimbolos.buscarPorId(simbolo.getId()) == null) {
                         tablaSimbolos.agregarTablaSimbolos(simbolo);
                         retornar.add(simbolo);
-                        auxiliarVariable(simbolo);
+                        auxiliarVariableInstancia(simbolo);
+                        if (!manejadorHeap.isJava()) {
+                            if ( simbolo.getValor() != null ) {
+                                Simbolo sAux = (Simbolo) simbolo.getValor();
+                                simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(sAux, simbolo));
+                            }
+                        }
                     } else {
                         errorSintax(l, r, "Declaracion", "Error: Declaracion de variable < " + simbolo.getId() + " > ya existe una variable declarada con el mismo nombre.");
                     }
@@ -232,9 +303,16 @@ public class ManejadorSintacticoJP {
                     if (tipo.isFatherOf(simbolo.getTipo().getSymbol())) {
                         simbolo.setTipo(tipo);
                         if (tablaSimbolos.buscarPorId(simbolo.getId()) == null) {
+                            simbolo.setGlobal(true);
                             tablaSimbolos.agregarTablaSimbolos(simbolo);
                             retornar.add(simbolo);
-                            auxiliarVariable(simbolo);
+                            auxiliarVariableInstancia(simbolo);
+                            if (!manejadorHeap.isJava()) {
+                                if ( simbolo.getValor() != null ) {
+                                    Simbolo sAux = (Simbolo) simbolo.getValor();
+                                    simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(sAux, simbolo));
+                                }
+                            }
                         } else {
                             errorSintax(l, r, "Declaracion" , "Error: Declaracion de variable < " + simbolo.getId() + " >ya existe una variable declarada con el mismo nombre.");
                         }
@@ -281,11 +359,11 @@ public class ManejadorSintacticoJP {
         }
         Simbolo arreglo = tablaSimbolos.buscarPorId(((Simbolo) a).getId());
         if (arreglo == null) {
-            arreglo = new Simbolo(tipo, ((List<Simbolo>) ((Simbolo) a).getValor()), ((Simbolo) a).getId());
+            arreglo = new Simbolo(tipo, manejadorTablaPila.lista(((Simbolo) a).getValor()), ((Simbolo) a).getId());
             arreglo.setAux(dimension);
             ManejadorArreglos ma = ManejadorArreglos.getInstancia();
-            ma.addArreglo(ma.lista((List<Simbolo>) ((Simbolo) a).getValor()), tipo, arreglo);
-            ma.imprimir(ma.lista( (List<Simbolo>) ((Simbolo) a).getValor()) );
+            ma.addArreglo(ma.lista(manejadorTablaPila.lista(((Simbolo) a).getValor())), tipo, arreglo);
+//            ma.imprimir(ma.lista( (List<Simbolo>) ((Simbolo) a).getValor()) );
             tablaSimbolos.agregarTablaSimbolos(arreglo);
             return  arreglo;
         } else {
@@ -294,23 +372,61 @@ public class ManejadorSintacticoJP {
         }
     }
     
-    public void auxiliarVariable(Simbolo simbolo){
+    public void auxiliarVariableInstancia(Simbolo simbolo) throws CloneNotSupportedException{
         if (simbolo.getValor() == null) {
-            simbolo.setCuarteto(manejadorCuartetos.declararVariable(null, simbolo));
+            manejadorTablaPila.addSimboloTablaInstancia(simbolo);
         } else {
             if (simbolo.getValor() instanceof Simbolo) {
                 if (((Simbolo) simbolo.getValor()).getCuarteto() == null) {
-                    simbolo.setCuarteto(manejadorCuartetos.declararVariable(((Simbolo) simbolo.getValor()), simbolo));
+                   manejadorTablaPila.addSimboloTablaInstancia(simbolo);
                     if(((Simbolo) simbolo.getValor()).getInput() != 0){
-                        manejadorCuartetos.imprimirScanf(((Simbolo) simbolo.getValor()).getInput(), simbolo.getId());
+                        manejadorCuartetos.imprimirScanf(((Simbolo) simbolo.getValor()).getInput(), simbolo);
                     }
                 } else { 
-                    simbolo.setCuarteto(manejadorCuartetos.declararVariable(((Simbolo) simbolo.getValor()).getCuarteto().getResultado(), simbolo));
+                    manejadorTablaPila.addSimboloTablaInstancia(simbolo);
                 }
             } else {
-                simbolo.setCuarteto(manejadorCuartetos.declararVariable(new Simbolo(null, simbolo.getValor()), simbolo));
+                manejadorTablaPila.addSimboloTablaInstancia(simbolo);
             }
         }
+    }
+    
+    public void auxiliarVariable(Simbolo simbolo) throws CloneNotSupportedException{
+        if (simbolo.getValor() == null) {
+            manejadorTablaPila.addDeclaracionVariable(simbolo);
+        } else {
+            if (simbolo.getValor() instanceof Simbolo) {
+                if (((Simbolo) simbolo).getCuarteto() != null) {
+                    manejadorTablaPila.addDeclaracionVariable(simbolo);
+                    manejadorCuartetos.asignacionCuarteto(((Simbolo) simbolo).getCuarteto().getResultado(), simbolo);
+                } else if (((Simbolo) simbolo).getInput() != 0){
+                    manejadorTablaPila.addDeclaracionVariable(simbolo);
+                    manejadorCuartetos.imprimirScanf(((Simbolo) simbolo).getInput(), simbolo);
+                } else {
+                    manejadorTablaPila.addDeclaracionVariable(simbolo);
+                    manejadorCuartetos.asignacionCuarteto(((Simbolo) simbolo.getValor()), simbolo);
+                }
+            } else {
+                manejadorTablaPila.addDeclaracionVariable(simbolo);
+            }
+        }
+    }
+    
+    public Simbolo declaraUnaVariable(Object valor, int l, int r) {
+        if (valor == null) {
+            errorSemantico(l, r, "null", "No se puede asignar el valor a la variable, debido a que el tipo de dato no corresponde.");
+            return null;
+        } else {
+            if (tablaSimbolos.buscarPorId(((Simbolo) valor).getId()) == null) {
+                Simbolo simbolo  = (Simbolo) valor;
+                manejadorTablaPila.addDeclaracionVariable(simbolo);
+                tablaSimbolos.agregarTablaSimbolos(simbolo);
+                return simbolo;
+            } else {
+                errorSintax(l, r, ((Simbolo) valor).getId(), "Ya se encuentra definida la variable: < " + ((Simbolo) valor).getId() + " >");
+                return null;
+            }
+        } 
     }
     
     /**
@@ -321,7 +437,7 @@ public class ManejadorSintacticoJP {
      * @return La declaracion de la variable
      */
     
-    public Object declararVariables(Object a, int l, int r){
+    public Object declararVariables(Object a, int l, int r) throws CloneNotSupportedException{
         if (a == null) {
             return null;
         }
@@ -468,6 +584,13 @@ public class ManejadorSintacticoJP {
         }
     }
     
+    public Simbolo auxRO(){
+        Cuarteto c = manejadorCuartetos.addApuntador(0);
+        c = manejadorCuartetos.addPunteroFuncin(c);
+        manejadorCuartetos.addYRemovePuntero(null, false);
+        return c.getResultado();
+    }
+    
     /**
      * Funcion que realiza operaciones
      * @param op1 OOperando 1
@@ -485,15 +608,31 @@ public class ManejadorSintacticoJP {
             if (((Simbolo) op1).getTipo().isFatherOf(((Simbolo) op2).getTipo().getSymbol()))  {
                 try {
                     Simbolo regresar = new Simbolo(((Simbolo) op1).getTipo(), tipoOperacion);
-                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, (Simbolo) op1, (Simbolo) op2, null, ((Simbolo) op1).getTipo()));
+                    Simbolo aux1 = (Simbolo) op1;
+                    Simbolo aux2 = (Simbolo) op2;
+                    if (((Simbolo) op2).getTipoFuncion() != null) {                        
+                        aux2 = auxRO();
+                    } 
+                    if (((Simbolo) op1).getTipoFuncion() != null) {                        
+                        aux1 = auxRO();
+                    } 
+                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, aux1, aux2, null, Constantes.FLOAT_VAR_PJ));
                     return regresar;
                 } catch (CloneNotSupportedException ex) {
                     Logger.getLogger(ManejadorSintacticoVB_PY.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
                 try {
-                    Simbolo regresar = new Simbolo(((Simbolo) op2).getTipo(), tipoOperacion);
-                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, (Simbolo) op1, (Simbolo) op2, null, ((Simbolo) op2).getTipo()));
+                    Simbolo regresar = new Simbolo(((Simbolo) op1).getTipo(), tipoOperacion);
+                    Simbolo aux1 = (Simbolo) op1;
+                    Simbolo aux2 = (Simbolo) op2;
+                    if (((Simbolo) op2).getTipoFuncion() != null) {                        
+                        aux2 = auxRO();
+                    } 
+                    if (((Simbolo) op1).getTipoFuncion() != null) {                        
+                        aux1 = auxRO();
+                    }                    
+                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, aux1, aux2, null, Constantes.FLOAT_VAR_PJ));
                     return regresar;
                 } catch (CloneNotSupportedException ex) {
                     Logger.getLogger(ManejadorSintacticoVB_PY.class.getName()).log(Level.SEVERE, null, ex);
@@ -511,14 +650,15 @@ public class ManejadorSintacticoJP {
      * @param l left del simbolo
      * @param r right del simbolo
      * @return 
+     * @throws java.lang.CloneNotSupportedException 
      */
     
-    public Simbolo asignacionVariables(Object s, int l, int r){
+    public Simbolo asignacionVariables(Object s, int l, int r) throws CloneNotSupportedException{
         if (s != null) {
             Simbolo aux = metodoBuscarID(((Simbolo) s).getId(), l, r);
             if (aux != null) {
                 if (((Simbolo) ((Simbolo) s).getValor()).getInput() != 0) {
-                    manejadorCuartetos.imprimirScanf(((Simbolo) ((Simbolo) s).getValor()).getInput(), aux.getId());
+                    manejadorCuartetos.imprimirScanf(((Simbolo) ((Simbolo) s).getValor()).getInput(), aux);
                     return aux;
                 }
                 //Parte de Funciones
@@ -527,8 +667,8 @@ public class ManejadorSintacticoJP {
                         aux.setValor(((Simbolo) s).getValor());
                         if (((Simbolo) s).getValor() instanceof Simbolo) {
                             if (((Simbolo) ((Simbolo) s).getValor()).getTipoFuncion() != null) {
-                                manejadorCuartetos.removerUltmio();
-                                aux.setCuarteto(manejadorCuartetos.asignacionCuarteto(((Simbolo) ((Simbolo) s).getValor()).getCuarteto().getOperando1(), aux));
+                                Simbolo c = auxRO();
+                                aux.setCuarteto(manejadorCuartetos.asignacionCuarteto(c, aux));
                             } else {
                                 aux.setCuarteto(manejadorCuartetos.asignacionCuarteto((Simbolo)((Simbolo) s).getValor(), aux));
                             }
@@ -536,8 +676,10 @@ public class ManejadorSintacticoJP {
                         return aux;
                     } else {
                         errorSemantico(l, r, "Asignacion", "No se puede realizar la asigacion debido a que los tipos no son compatibles.");
+                        return null;
                     }  
                 }
+                
                 if (aux.getTipo().isFatherOf(((Simbolo) s).getTipo().getSymbol())) {
                     aux.setValor(((Simbolo) s).getValor());
                     if (((Simbolo) s).getValor() instanceof Simbolo) {
@@ -553,14 +695,15 @@ public class ManejadorSintacticoJP {
         return null;
     }
 
-    public Simbolo asignacionArreglos(Object s, int l, int r, Simbolo comparar){
+    public Simbolo asignacionArreglos(Object s, int l, int r, Simbolo comparar) throws CloneNotSupportedException{
         if (s != null && comparar != null) {
             String id = ((Simbolo) s).getId();
             Simbolo aux = metodoBuscarID(id, l, r);
             if (aux != null) {
                 if (aux.getTipo().isFatherOf(comparar.getTipo().getSymbol())) {
                     if (((List<Simbolo>) aux.getValor()).size() == 
-                            ((List<Simbolo>) ((Simbolo) s).getValor()).size()) {
+                            manejadorTablaPila.lista(((Simbolo) s).getValor()).size()) {
+                        manejadorArreglos.recursivo(aux, manejadorArreglos.listaDimensiones(((Simbolo) s).getValor()), comparar, aux);
                         return aux;
                     }
                     errorSemantico(l, r, "Arreglo", "Error, asignacion del arreglo la dimension no corresponde.");
@@ -574,13 +717,14 @@ public class ManejadorSintacticoJP {
         return null; 
     }
     
-    public Simbolo buscarArreglo(Object s, int l, int r){
+    public Simbolo buscarArreglo(Object s, int l, int r) throws CloneNotSupportedException{
         if (s != null) {
             String id = ((Simbolo) s).getId();
             Simbolo aux = metodoBuscarID(id, l, r);
             if (aux != null) {
-                 if (aux.getAux() == ((List<Simbolo>) ((Simbolo) s).getValor()).size()) {
-                        return aux;
+                if (aux.getAux() == (manejadorTablaPila.lista(((Simbolo) s).getValor())).size()) {
+                    aux.setCuarteto((manejadorArreglos.recursivoArreglo(aux, manejadorArreglos.listaDimensiones(((Simbolo) s).getValor()), aux)));
+                    return aux.clone();
                 }
                 errorSemantico(l, r, "Arreglo", "Error, busqueda del arreglo la dimension no corresponde.");
                 return null;
@@ -598,7 +742,7 @@ public class ManejadorSintacticoJP {
      * @param r right del simbolo
      */
     
-    public void asignacionVariablesThis(String id, Object asignacion, int l, int r){
+    public void asignacionVariablesThis(String id, Object asignacion, int l, int r) throws CloneNotSupportedException{
         if (asignacion != null) {
             Simbolo aux = tablaSimbolos.buscarPorIdAmbito(id, 0);
             if (aux != null) {
@@ -606,7 +750,7 @@ public class ManejadorSintacticoJP {
                     aux.setValor(((Simbolo) asignacion).getValor());
                     if (asignacion instanceof Simbolo) {
                         if (((Simbolo) asignacion).getInput() != 0) {
-                            manejadorCuartetos.imprimirScanf(((Simbolo) asignacion).getInput(), id);
+                            manejadorCuartetos.imprimirScanf(((Simbolo) asignacion).getInput(), aux);
                         } else {
                             if (((Simbolo) asignacion).getCuarteto() != null) {
                                 aux.setCuarteto(manejadorCuartetos.asignacionCuarteto(((Simbolo) asignacion).getCuarteto().getResultado(), aux));
@@ -620,7 +764,9 @@ public class ManejadorSintacticoJP {
                 } else {
                     errorSemantico(l, r, id, "No se puede realizar la asigacion debido a que los tipos no son compatibles.");
                 }  
-            } 
+            } else {
+                errorSemantico(l, r, id, "No se puede realizar la asigacion debido a que los la variable < " + id + " >, no se encuentra definida.");
+            }
         } 
     }
     
@@ -807,14 +953,15 @@ public class ManejadorSintacticoJP {
      * @return el simbolo comprobado
      */
     
-    public Simbolo comprobarAsignacionFor(Object valor, String id, int l, int r, Tipo tipo){
+    public Simbolo comprobarAsignacionFor(Object valor, String id, int l, int r, Tipo tipo) throws CloneNotSupportedException{
         if (tablaSimbolos.buscarPorId(id) == null || tipo == null) {
             if (valor != null) {
                 if (tipo != null) {
                     if (tipo.isFatherOf(((Simbolo) valor).getTipo().getSymbol())) {
                         Simbolo s = new Simbolo(tipo, ((Simbolo) valor).getValor(), id);
-                        manejadorCuartetos.declararVariable((Simbolo) valor, s);
+                        manejadorTablaPila.addDeclaracionVariable((Simbolo) s);
                         if (tablaSimbolos.agregarTablaSimbolos(s)) {
+                            manejadorCuartetos.asignacionCuarteto((Simbolo) valor, s);
                             return s;
                         } else {
                             errorSemantico(-1, -1, "Declaracion", "Error: Despues de haber declarado la instruccion return, no se podra seguir declarando mas instrucciones.");
@@ -824,9 +971,18 @@ public class ManejadorSintacticoJP {
                         errorSemantico(l, r, "Asignacion", "Error en la asignacion la compatibilidad de tipos es diferente. ID: > " + id);
                     }
                 } else {
-                    Simbolo s = new Simbolo(((Simbolo) valor).getTipo(), ((Simbolo) valor).getValor(), id);
-                    manejadorCuartetos.asignacionCuarteto((Simbolo) valor, s);
-                    return s;
+                    Simbolo s = metodoBuscarID(id, l, r).clone();
+                    if (s == null) {
+                        return null;
+                    } else {
+                        if (s.getTipo().isFatherOf(((Simbolo) valor).getTipo().getSymbol())) {
+                            manejadorCuartetos.asignacionCuarteto((Simbolo) valor, s);
+                            return s;
+                        } else {
+                            errorSemantico(l, r, "Asignacion", "Error en la asignacion la compatibilidad de tipos es diferente. ID: > " + id);
+                            return null;
+                        }
+                    }   
                 }
             }
         } else {
@@ -1097,20 +1253,21 @@ public class ManejadorSintacticoJP {
     public Simbolo funcion(Object parametros, Tipo tipo, Object estructuras, Object regresar, String id, int l, int r){
         if (parametros != null) {
             vaciarAmbitos(parametros);
+            tablaSimbolos.removerPorId(id);
             Funcion f = new Funcion();
             f.setParametros(parametros);
             f.addStatements(estructuras);
             vaciarAmbitos(estructuras);
             if (!f.comprobarSiTieneReturn(tipo, l, r, true)) {
                 vaciarAmbitos(estructuras);
-                errorSemantico(l, r, "Return", "Error el funcion conflictos con la instruccion RETURN.");
+                errorSemantico(l, r, "Return", "Error el funcion, aun faltan instrucciones RETURN.");
                 return null;
             }
             Simbolo function = new Simbolo(new Tipo("Funcion", Constantes.FUNCION), f, id);
             function.setTipoFuncion(tipo);
             if (tablaSimbolos.buscarPorId(id) == null) {
-                boolean bandera = tablaSimbolos.agregarTablaSimbolos(function);
-                //tablaSimbolos.print();
+                tablaSimbolos.agregarTablaSimbolos(function);
+                manejadorTablaPila.addTamanio();
                 return function;
             } else {
                 vaciarAmbitos(estructuras);
@@ -1135,8 +1292,8 @@ public class ManejadorSintacticoJP {
             }
             Simbolo metodo = new Simbolo(new Tipo("Metodo", Constantes.METODO), m, id);
             if (tablaSimbolos.buscarPorId(id) == null) {
-                boolean bandera = tablaSimbolos.agregarTablaSimbolos(metodo);
-                //tablaSimbolos.print();
+                tablaSimbolos.agregarTablaSimbolos(metodo);
+                manejadorTablaPila.addTamanio();
                 return metodo; 
             } else {
                 errorSintax(l, r, "Metodo <" + id + "> ", "Error existe un metodo o funcion declarada con el mismo nombre.");
@@ -1198,7 +1355,7 @@ public class ManejadorSintacticoJP {
     }
     
     
-    public List<Simbolo> agregarInstancias(List<Simbolo> idInstancias, String clase, int l, int r){
+    public List<Simbolo> agregarInstancias(List<Simbolo> idInstancias, String clase, int l, int r) throws CloneNotSupportedException{
         List<Simbolo> lista = new ArrayList<>();
         ManejadorInstancias mi = ManejadorInstancias.getInstance();
         if (tablaSimbolos.buscarPorId("$*") == null) {
@@ -1215,38 +1372,42 @@ public class ManejadorSintacticoJP {
                     tablaSimbolos.agregarTablaSimbolos(simbolo);
                     List<Simbolo> params = mi.param(idInstancia.getValor());
                     simbolo.setCuarteto(mi.escribirFuncion("JAVA_" + clase + "_" + clase, params));
-                    manejadorCuartetos.removerUltmio();
-                    simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(simbolo.getCuarteto().getOperando1(), simbolo));
+                    //Obtengo el apuntador del this
+                    Cuarteto c = manejadorCuartetos.addApuntador(1); //Puntero al this
+                    c = manejadorCuartetos.addPunteroFuncin(c); //tempm = stack[puntero_this]
+                    manejadorCuartetos.addYRemovePuntero(null, false); //p = p - n
+                    manejadorTablaPila.addSimboloTablaObjeto(simbolo, params.size());// Lo agrego ala tabla de simbolos
+                    simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(c.getResultado(), simbolo));
                     lista.add(simbolo);
                 } 
             } else {
-                errorSintax(l, r, "Delcaracion", "Error, no se puede delcarar la instancia con el ID: " + idInstancia + " ya existe una varibale definida con este id.");
+                errorSintax(l, r, "Declaracion", "Error, no se puede delcarar la instancia con el ID: " + idInstancia + " ya existe una varibale definida con este id.");
             }
         } return lista;
     }
     
-    public List<Integer> listaNumeros(Object e, Object a){
-        List<Integer> lista = new ArrayList<>();
+    public List<SimboloPrint> listaNumeros(Object e, Object a){
+        List<SimboloPrint> lista = new ArrayList<>();
+        if(e instanceof SimboloPrint) {
+            lista.add((SimboloPrint) e);
+        } else {
+            lista.addAll((List<SimboloPrint>) e);
+        }
         if (a != null) {
-            if (a instanceof Integer) {
-                lista.add((int) a);
-            } else {
-                lista = (List<Integer>) a;
-            }
-        } 
-        if (e != null) {
-            if( e instanceof Integer) {
-                lista.add((int) e);
-            } else {
-                lista.addAll((List<Integer>) e);
-            }
+            lista.add((SimboloPrint) a);
         }
         return lista;
     }
     
-    public List<Simbolo> comprobarPrint(List<Integer> lista, Object listaIds, int l, int r){
-        if (lista == null || listaIds == null) {
+    public List<Simbolo> comprobarPrint(Object listas, Object listaIds, int l, int r){
+        if (listas == null || listaIds == null) {
             return null;
+        }
+        List<SimboloPrint> lista = new ArrayList<>();
+        if (listas instanceof SimboloPrint) {
+            lista.add((SimboloPrint) listas);
+        } else {
+            lista.addAll((List<SimboloPrint>) listas);
         }
         List<Simbolo> simbolos = new ArrayList<>();
         if (listaIds instanceof Simbolo) {
@@ -1256,10 +1417,23 @@ public class ManejadorSintacticoJP {
         }
         if (lista.size() == simbolos.size()) {
             while (!lista.isEmpty()) {
-                manejadorCuartetos.imprimirPrintf(lista.remove(0), simbolos.remove(0).getId());
+                if (lista.get(0).getMensaje() != null) {
+                    manejadorCuartetos.imprimir(new Simbolo(null, "\"" + lista.get(0).getMensaje() + "\""));
+                }
+                if (comprobarErrorPrintf(lista.get(0).getComodin(), simbolos.get(0))) {
+                    manejadorCuartetos.imprimirPrintf(lista.remove(0).getComodin(), simbolos.remove(0));
+                } else {
+                    lista.remove(0);
+                    simbolos.remove(0);
+                    errorSintax(l, r, "Comodin", "Error, en la comprobacion de tipos la etiqueta no corresponde con el tipo del id en esa posicion.");
+                }                
             }
         } else {
             errorSemantico(l, r, "PRINTF", "Error, la cantidad de valores asignar, no hacen match con la cnatidad de caracteres especificados.");
         } return simbolos;
+    }
+    
+    public boolean comprobarErrorPrintf(int tipo, Simbolo simbolo){
+        return simbolo.getTipo().getSymbol() == tipo;
     }
 }

@@ -16,16 +16,33 @@ public class Cuarteto {
     private Simbolo operando2;
     private Simbolo resultado;
     private String cod3D;
-
+    private String indiceVector;
+    
     public Cuarteto(String operador, Simbolo operando1, Simbolo operando2, Simbolo resultado) {
         this.operador = operador;
         this.operando1 = operando1;
         this.operando2 = operando2;
         this.resultado = resultado;
     }
+
+    public Cuarteto(String operador, Simbolo operando1, Simbolo operando2, Simbolo resultado, String indiceVector) {
+        this.operador = operador;
+        this.operando1 = operando1;
+        this.operando2 = operando2;
+        this.resultado = resultado;
+        this.indiceVector = indiceVector;
+    }
     
     public Cuarteto clone(){
         return new Cuarteto(operador, operando1, operando2, resultado);
+    }
+
+    public String getIndiceVector() {
+        return indiceVector;
+    }
+
+    public void setIndiceVector(String indiceVector) {
+        this.indiceVector = indiceVector;
     }
     
     public String getCod3D() {

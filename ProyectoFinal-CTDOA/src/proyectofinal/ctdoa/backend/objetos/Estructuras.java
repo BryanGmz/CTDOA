@@ -90,13 +90,12 @@ public class Estructuras {
                         } 
                     } else {
                         return false;
-                    } break;
+                    } return true;
                 case Constantes.SWITCH:
                     CondicionalSwitch condicionalSwitch = (CondicionalSwitch) simbolo.getValor();
                     if (!condicionalSwitch.getListaCasos().stream().noneMatch((casos) -> (!casos.comprobarSiTieneReturn(simboloComprobar, l, r, false)))) {
                         return false;
-                    }
-                    break;
+                    } return true;
                 case Constantes.WHILE:
                 case Constantes.DO_WHILE:
                 case Constantes.FOR:

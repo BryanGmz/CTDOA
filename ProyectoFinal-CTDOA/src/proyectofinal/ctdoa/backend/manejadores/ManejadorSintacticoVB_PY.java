@@ -19,6 +19,7 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
     
     private static ManejadorSintacticoVB_PY manejadorSintacticoVB_PY;
     private static ManejadorCuartetos manejadorCuartetos = ManejadorCuartetos.getInstancia();
+    private static ManejadorTablaPila manejadorTablaPila =ManejadorTablaPila.getInstancia();
     private static TablaSimbolos tablaSimbolos;
     int contadorAmbitos;
     
@@ -32,6 +33,11 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
         if (manejadorSintacticoVB_PY == null) {
             manejadorSintacticoVB_PY = new ManejadorSintacticoVB_PY();
         } return manejadorSintacticoVB_PY;
+    }
+    
+    @Override
+    public TablaSimbolos getTablaSimbolos() {
+        return tablaSimbolos;
     }
     
     @Override
@@ -65,10 +71,9 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
 
     @Override
     public Simbolo declaraUnaVariableParametro(Tipo tipo, String id, int l, int r) {
-        
         if (tablaSimbolos.buscarPorId(id) == null) {
             Simbolo simbolo  = new Simbolo(tipo, null, id);
-            boolean bandera = tablaSimbolos.agregarTablaSimbolos(simbolo);
+            tablaSimbolos.agregarTablaSimbolos(simbolo);
             return simbolo;
         } else {
             errorSintax(l, r, id, "Ya se encuentra definida la variable: < " + id + " >");
@@ -76,40 +81,6 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
         }
     }
     
-    public Simbolo declaraUnaVariableAsignacion(Tipo tipo, Object valor, String id, int l, int r) {
-        if (valor == null) {
-            errorSemantico(l, r, "null", "No se puede asignar el valor a la variable: < " + id + " > debido a que el tipo de dato no corresponde.");
-            return null;
-        } else {
-            if (tipo.isFatherOf(((Simbolo) valor).getTipo().getSymbol())) {
-                if (tablaSimbolos.buscarPorId(id) == null) {
-                    Simbolo simbolo  = (Simbolo) valor;
-                    simbolo.setId(id);
-                    simbolo.setTipo(tipo);
-                    if (simbolo.getCuarteto() != null) {
-                        simbolo.setCuarteto(manejadorCuartetos.declararVariable(((Simbolo) simbolo).getCuarteto().getResultado(), simbolo));
-                    } else {
-                        if (simbolo.getValor() instanceof Simbolo) {
-                            simbolo.setCuarteto(manejadorCuartetos.declararVariable((Simbolo) simbolo.getValor(), simbolo));
-                        } else {
-                            simbolo.setCuarteto(manejadorCuartetos.declararVariable(new Simbolo(null, simbolo.getValor()), simbolo));
-                        }
-                        if(simbolo.getInput() != 0){
-                            manejadorCuartetos.imprimirScanf(simbolo.getInput(), simbolo.getId());
-                        }
-                    }
-                    boolean bandera = tablaSimbolos.agregarTablaSimbolos(simbolo);
-                    return simbolo;
-                } else {
-                    errorSintax(l, r, id, "Ya se encuentra definida la variable: < " + id + " >");
-                    return null;
-                }
-            } else {
-                errorSemantico(l, r, ((Simbolo) valor).getValor(), "No se puede asignar el valor a la variable: < " + id + " > debido a que el tipo de dato no corresponde.");
-                return null;
-            }
-        }
-    }
    
     public Simbolo declaraUnaVariable(Object valor, int l, int r) {
         if (valor == null) {
@@ -118,19 +89,8 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
         } else {
             if (tablaSimbolos.buscarPorId(((Simbolo) valor).getId()) == null) {
                 Simbolo simbolo  = (Simbolo) valor;
-                if (simbolo.getValor() == null) {
-                    simbolo.setCuarteto(manejadorCuartetos.declararVariable(null, simbolo));
-                } else {
-                    if (simbolo.getValor() instanceof Simbolo) {
-                        simbolo.setCuarteto(manejadorCuartetos.declararVariable(((Simbolo) simbolo.getValor()).getCuarteto().getResultado(), simbolo));
-                        if(((Simbolo) simbolo.getValor()).getInput() != 0){
-                            manejadorCuartetos.imprimirScanf(((Simbolo) simbolo.getValor()).getInput(), simbolo.getId());
-                        }
-                    } else {
-                        simbolo.setCuarteto(manejadorCuartetos.declararVariable((Simbolo) simbolo, simbolo));
-                    }
-                }
-                boolean bandera = tablaSimbolos.agregarTablaSimbolos(simbolo);
+                manejadorTablaPila.addDeclaracionVariable(simbolo);
+                tablaSimbolos.agregarTablaSimbolos(simbolo);
                 return simbolo;
             } else {
                 errorSintax(l, r, ((Simbolo) valor).getId(), "Ya se encuentra definida la variable: < " + ((Simbolo) valor).getId() + " >");
@@ -163,7 +123,6 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
         if (tablaSimbolos.buscarPorId(id) == null) {
             Simbolo param = new Simbolo(Constantes.FLOAT_VAR_VB_PY, "Parametro", id);
             tablaSimbolos.agregarTablaSimbolos(param);
-            /*tablaSimbolos.print();*/
             return param;
         } else {
             errorSintax(l, r, "Parametro", "Error, la variable: " + id + ", se encuentra definida.");
@@ -175,8 +134,8 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
         Simbolo simbolo = tablaSimbolos.buscarPorId(id);
         if (simbolo == null) {
             simbolo = new Simbolo(Constantes.FLOAT_VAR_VB_PY, null, id);
+            manejadorTablaPila.addDeclaracionVariable(simbolo);
             tablaSimbolos.agregarTablaSimbolos(simbolo);
-            simbolo.setCuarteto(manejadorCuartetos.declararVariable(null, simbolo));
             return simbolo;
         } else {
             if (Constantes.FLOAT_VAR_VB_PY.isFatherOf(simbolo.getTipo().getSymbol())) {
@@ -188,7 +147,95 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
         }
     }
     
-    public Simbolo declararVaiablesPY(int l, int r, Simbolo valor){
+    public Simbolo declaraUnaVariableAsignacion(Tipo tipo, Object valor, String id, int l, int r) throws CloneNotSupportedException {
+        if (valor == null) {
+            errorSemantico(l, r, "null", "No se puede asignar el valor a la variable: < " + id + " > debido a que el tipo de dato no corresponde.");
+            return null;
+        } else {
+            if (tipo.isFatherOf(((Simbolo) valor).getTipo().getSymbol())) {
+                if (tablaSimbolos.buscarPorId(id) == null) {
+                    Simbolo simbolo = new Simbolo(null, valor, id);
+                    simbolo.setId(id);
+                    simbolo.setTipo(tipo);
+                    //Parte de Funciones
+                    if ( ((Simbolo) valor).getTipoFuncion() != null) {
+                        if (tipo.isFatherOf(((Simbolo) valor).getTipo().getSymbol())) {
+                            simbolo.setValor(valor);
+                            Cuarteto c = manejadorCuartetos.addApuntador(0);
+                            c = manejadorCuartetos.addPunteroFuncin(c);
+                            simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(c.getResultado(), simbolo));
+                            manejadorCuartetos.addYRemovePuntero(null, false);
+                            return simbolo;
+                        } else {
+                            errorSemantico(l, r, "Asignacion", "No se puede realizar la asigacion debido a que los tipos no son compatibles.");
+                            return null;
+                        }  
+                    }
+                    if (((Simbolo) valor).getCuarteto() != null) {
+                        manejadorTablaPila.addDeclaracionVariable(simbolo);
+                        manejadorCuartetos.asignacionCuarteto(((Simbolo) valor).getCuarteto().getResultado(), simbolo);
+                    } else if (((Simbolo) valor).getInput() != 0){
+                        manejadorTablaPila.addDeclaracionVariable(simbolo);
+                        manejadorCuartetos.imprimirScanf(((Simbolo) valor).getInput(), simbolo);
+                    } else {
+                        manejadorTablaPila.addDeclaracionVariable(simbolo);
+                        manejadorCuartetos.asignacionCuarteto(((Simbolo) simbolo.getValor()), simbolo);
+                    }
+                    tablaSimbolos.agregarTablaSimbolos(simbolo);
+                    return simbolo;
+                } else {
+                    errorSintax(l, r, id, "Ya se encuentra definida la variable: < " + id + " >");
+                    return null;
+                }
+            } else {
+                errorSemantico(l, r, ((Simbolo) valor).getValor(), "No se puede asignar el valor a la variable: < " + id + " > debido a que el tipo de dato no corresponde.");
+                return null;
+            }
+        }
+    }
+    
+    @Override
+    public Simbolo asignacionVariables(Object s, int l, int r) throws CloneNotSupportedException {
+        if (s != null) {
+            Simbolo aux = metodoBuscarID(((Simbolo) s).getId(), l, r);
+            if (aux != null) {
+                if ( ((Simbolo) ((Simbolo) s).getValor()).getInput() != 0) {
+                    manejadorCuartetos.imprimirScanf(((Simbolo) ((Simbolo) s).getValor()).getInput(), aux);
+                    return aux;
+                }
+                //Parte de Funciones
+                if ( (((Simbolo) s).getValor() instanceof Simbolo && ((Simbolo) ((Simbolo) s).getValor()).getTipoFuncion() != null)) {
+                    if (aux.getTipo().isFatherOf(((Simbolo) s).getTipo().getSymbol())) {
+                        aux.setValor(((Simbolo) s).getValor());
+                        if (((Simbolo) s).getValor() instanceof Simbolo) {
+                            if (((Simbolo) ((Simbolo) s).getValor()).getTipoFuncion() != null) {
+                                Cuarteto c = manejadorCuartetos.addApuntador(0);
+                                c = manejadorCuartetos.addPunteroFuncin(c);
+                                manejadorCuartetos.addYRemovePuntero(null, false);
+                                aux.setCuarteto(manejadorCuartetos.asignacionCuarteto(c.getResultado(), aux));
+                            } else {
+                                aux.setCuarteto(manejadorCuartetos.asignacionCuarteto((Simbolo)((Simbolo) s).getValor(), aux));
+                            }
+                        }
+                        return aux;
+                    } else {
+                        errorSemantico(l, r, "Asignacion", "No se puede realizar la asigacion debido a que los tipos no son compatibles.");
+                        return null;
+                    }  
+                }
+                
+                if (aux.getTipo().isFatherOf(((Simbolo) s).getTipo().getSymbol())) {
+                    aux.setValor(((Simbolo) s).getValor());
+                    aux.setCuarteto(manejadorCuartetos.asignacionCuarteto((Simbolo)((Simbolo) s).getValor(), aux));
+                    return aux;
+                } else {
+                    errorSemantico(l, r, ((Simbolo) s).getId(), "No se puede realizar la asigacion debido a que los tipos no son compatibles.");
+                }  
+            } 
+        } return null;
+    }
+    
+    public Simbolo declararVaiablesPY(int l, int r, Simbolo valor) throws CloneNotSupportedException{
         if (valor != null) {
             if (valor.getValor() == null) {
                 errorSemantico(l, r, "Asignacion", "Error, en la asignacion de variable.");
@@ -196,26 +243,45 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
             }
             Simbolo simbolo = tablaSimbolos.buscarPorId(valor.getId());
             if (simbolo != null) {
+                simbolo.setTipo(valor.getTipo());
                 if (simbolo.getTipo().isFatherOf(valor.getTipo().getSymbol())) {
-                    simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(((Simbolo) valor.getValor()), simbolo));
-                    if (valor.getValor() instanceof Simbolo) {
-                        if(((Simbolo) valor.getValor()).getInput() != 0){
-                            manejadorCuartetos.imprimirScanf(((Simbolo) valor.getValor()).getInput(), simbolo.getId());
+                    if (((Simbolo) valor.getValor()).getTipoFuncion()  != null) {
+                        if (simbolo.getTipo().isFatherOf(((Simbolo) valor.getValor()).getTipoFuncion().getSymbol())) {
+                            Simbolo c = auxRO();
+                            simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(c, simbolo));
+                            return simbolo;
+                        } else {
+                            errorSemantico(l, r, "Asignacion", "Error, en la  comprobacion de tipos");
+                            return null;
                         }
+                    }
+                    if(((Simbolo) valor.getValor()).getInput() != 0){
+                        manejadorCuartetos.imprimirScanf(((Simbolo) valor.getValor()).getInput(), simbolo);
+                    } else {
+                        simbolo.setCuarteto(manejadorCuartetos.asignacionCuarteto(((Simbolo) valor.getValor()), simbolo));
                     }
                     return simbolo;
                 } else {
                     errorSemantico(l, r, "Asignacion", "Error, en la  comprobacion de tipos");
                     return null;
                 }
-            } else {
-                valor.setCuarteto(manejadorCuartetos.declararVariable((Simbolo) valor.getValor(), valor));
+            } else { //Declaracion de Variable
+                
+                if (((Simbolo) valor.getValor()).getTipoFuncion()  != null) {
+                    Simbolo c = auxRO();
+                    manejadorTablaPila.addDeclaracionVariable(valor);//Ya declare la variable
+                    valor.setCuarteto(manejadorCuartetos.asignacionCuarteto(c, valor));
+                    return valor;
+                }
+                manejadorTablaPila.addDeclaracionVariable(valor);//Ya declare la variable
+                if (((Simbolo) valor.getValor()).getCuarteto() != null) {
+                    manejadorCuartetos.asignacionCuarteto(((Simbolo) valor.getValor()).getCuarteto().getResultado(), valor);
+                } else if (((Simbolo) valor.getValor()).getInput() != 0) {
+                    manejadorCuartetos.imprimirScanf(((Simbolo) valor.getValor()).getInput(), valor);
+                } else {
+                    manejadorCuartetos.asignacionCuarteto((Simbolo) valor.getValor(), valor);
+                }
                 tablaSimbolos.agregarTablaSimbolos(valor);
-                if (valor.getValor() instanceof Simbolo) {
-                    if(((Simbolo) valor.getValor()).getInput() != 0){
-                            manejadorCuartetos.imprimirScanf(((Simbolo) valor.getValor()).getInput(), valor.getId());
-                        }
-                    }
                 return valor;
             } 
         } return null;
@@ -246,22 +312,38 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
     public boolean comprobarCompatibilidadTipos(Object op1, Object op2, int l1, int r1, int l2, int r2) {
         return super.comprobarCompatibilidadTipos(op1, op2, l1, r1, l2, r2); //To change body of generated methods, choose Tools | Templates.
     }
-
+    
     @Override
     public Simbolo realizarOperaciones(Object op1, Object op2, int l1, int r1, int l2, int r2, int tipoOperacion) {
         if (comprobarCompatibilidadTipos(op1, op2, l1, r1, l2, r2)) {
             if (((Simbolo) op1).getTipo().isFatherOf(((Simbolo) op2).getTipo().getSymbol()))  {
                 try {
                     Simbolo regresar = new Simbolo(((Simbolo) op1).getTipo(), tipoOperacion);
-                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, (Simbolo) op1, (Simbolo) op2, null, ((Simbolo) op1).getTipo()));
+                    Simbolo aux1 = (Simbolo) op1;
+                    Simbolo aux2 = (Simbolo) op2;
+                    if (((Simbolo) op2).getTipoFuncion() != null) {                        
+                        aux2 = auxRO();
+                    } 
+                    if (((Simbolo) op1).getTipoFuncion() != null) {                        
+                        aux1 = auxRO();
+                    } 
+                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, aux1, aux2, null, Constantes.FLOAT_VAR_PJ));
                     return regresar;
                 } catch (CloneNotSupportedException ex) {
                     Logger.getLogger(ManejadorSintacticoVB_PY.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
                 try {
-                    Simbolo regresar = new Simbolo(((Simbolo) op2).getTipo(), tipoOperacion);
-                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, (Simbolo) op1, (Simbolo) op2, null, ((Simbolo) op2).getTipo()));
+                    Simbolo regresar = new Simbolo(((Simbolo) op1).getTipo(), tipoOperacion);
+                    Simbolo aux1 = (Simbolo) op1;
+                    Simbolo aux2 = (Simbolo) op2;
+                    if (((Simbolo) op2).getTipoFuncion() != null) {                        
+                        aux2 = auxRO();
+                    } 
+                    if (((Simbolo) op1).getTipoFuncion() != null) {                        
+                        aux1 = auxRO();
+                    }                    
+                    regresar.setCuarteto(manejadorCuartetos.cuartetoOperacionAritmetica(tipoOperacion, aux1, aux2, null, Constantes.FLOAT_VAR_PJ));
                     return regresar;
                 } catch (CloneNotSupportedException ex) {
                     Logger.getLogger(ManejadorSintacticoVB_PY.class.getName()).log(Level.SEVERE, null, ex);
@@ -271,28 +353,8 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
             errorSemantico(l1, r1, "Operacion Aritmetica", "Error: No se puede realizar la operacion aritemtica debido a que los tipos no son compatibles.");
             return null;
         } return null;
-    }   
-
-    @Override
-    public Simbolo asignacionVariables(Object s, int l, int r) {
-        if (s != null) {
-            Simbolo aux = metodoBuscarID(((Simbolo) s).getId(), l, r);
-            if (aux != null) {
-                if (((Simbolo) ((Simbolo) s).getValor()).getInput() != 0) {
-                    manejadorCuartetos.imprimirScanf(((Simbolo) ((Simbolo) s).getValor()).getInput(), aux.getId());
-                    return aux;
-                }
-                if (aux.getTipo().isFatherOf(((Simbolo) s).getTipo().getSymbol())) {
-                    aux.setValor(((Simbolo) s).getValor());
-                    aux.setCuarteto(manejadorCuartetos.asignacionCuarteto((Simbolo)((Simbolo) s).getValor(), aux));
-                    return aux;
-                } else {
-                    errorSemantico(l, r, ((Simbolo) s).getId(), "No se puede realizar la asigacion debido a que los tipos no son compatibles.");
-                }  
-            } 
-        } return null;
     }
-
+    
     @Override
     public Simbolo comprobarOperacionesLogicas(Object op1, Object op2, int tipoOperacion, int l, int r) {
         return super.comprobarOperacionesLogicas(op1, op2, tipoOperacion, l, r); //To change body of generated methods, choose Tools | Templates.
@@ -389,22 +451,36 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
     }
 
     @Override
-    public Simbolo comprobarAsignacionFor(Object valor, String id, int l, int r, Tipo tipo) {
+    public Simbolo comprobarAsignacionFor(Object valor, String id, int l, int r, Tipo tipo) throws CloneNotSupportedException {
         if (tablaSimbolos.buscarPorId(id) == null || tipo == null) {
-            if (valor != null) {
+            if (valor != null) {//Asignacion
                 if (tipo != null) {
                     if (tipo.isFatherOf(((Simbolo) valor).getTipo().getSymbol())) {
                         Simbolo s = new Simbolo(tipo, ((Simbolo) valor).getValor(), id);
-                        manejadorCuartetos.declararVariable((Simbolo) valor, s); 
-                        boolean bandera = tablaSimbolos.agregarTablaSimbolos(s);
+                        manejadorTablaPila.addDeclaracionVariable((Simbolo) s);
+                        tablaSimbolos.agregarTablaSimbolos(s);
+                        manejadorCuartetos.asignacionCuarteto((Simbolo) valor, s);
                         return s;
                     } else {
                         errorSemantico(l, r, "Asignacion", "Error en la asignacion la compatibilidad de tipos es diferente. ID: > " + id);
                     }
                 } else {
-                    Simbolo s = new Simbolo(((Simbolo) valor).getTipo(), ((Simbolo) valor).getValor(), id);
-                    manejadorCuartetos.asignacionCuarteto((Simbolo) valor, s); 
-                    return s;
+                    try {
+                        Simbolo s = tablaSimbolos.buscarPorId(id).clone();
+                        if (s == null) {
+                            errorSemantico(l, r, "Asignacion", "Error la variable no se encuentra definida. ID: > " + id);
+                            return null;
+                        }
+                        if (s.getTipo().isFatherOf(((Simbolo) valor).getTipo().getSymbol())) {
+                            manejadorCuartetos.asignacionCuarteto((Simbolo) valor, s);
+                            return s;
+                        } else {
+                            errorSemantico(l, r, "Asignacion", "Error en la asignacion la compatibilidad de tipos es diferente. ID: > " + id);
+                            return null;
+                        }
+                    } catch (CloneNotSupportedException ex) {
+                        Logger.getLogger(ManejadorSintacticoVB_PY.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         } else {
@@ -552,23 +628,22 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
         if (parametros != null) {
             vaciarAmbitos(parametros);
             if (regresar != null) {
-                if (regresar instanceof Simbolo && ((Simbolo) regresar).getId() != null && ((Simbolo) regresar).getId().equals(id)) {
-                   
-                } else if (!tipo.isFatherOf( ((Simbolo) ((Simbolo) regresar).getValor()).getTipo().getSymbol()) ) {
-                    vaciarAmbitos(estructuras);
-                    errorSemantico(l, r, "Tipos", "Error en la comprobacion de tipos, el valor del Return no es compatible con la funcion.");
-                  return null;
-                } 
                 tablaSimbolos.removerPorId(id);
                 Funcion f = new Funcion();
                 f.setParametros(parametros);
                 f.addStatements(estructuras);
                 vaciarAmbitos(estructuras);
+                if (!f.comprobarSiTieneReturn(tipo, l, r, true)) {
+                    vaciarAmbitos(estructuras);
+                    errorSemantico(l, r, "Return", "Error el funcion, aun faltan instrucciones RETURN.");
+                    return null;
+                }
                 Simbolo function = new Simbolo(new Tipo("Funcion", Constantes.FUNCION), f, id);
                 function.setTipoFuncion(tipo);
                 if (tablaSimbolos.buscarPorId(id) == null) {
-                    boolean bandera = tablaSimbolos.agregarTablaSimbolos(function);
-                    /*tablaSimbolos.print();*/
+                    tablaSimbolos.agregarTablaSimbolos(function);
+                    
+                    manejadorTablaPila.addTamanio();
                     return function; 
                 } else {
                     vaciarAmbitos(estructuras);
@@ -596,10 +671,14 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
             m.setParametros(parametros);
             m.addStatements(estructuras);
             vaciarAmbitos(estructuras);
+            if (m.comporbarSiTieneReturnMetodo()) {
+                errorSemantico(l, r, "Return", "Error el metodo no debe tener la instruccion RETURN.");
+                return null;
+            }
             Simbolo metodo = new Simbolo(new Tipo("Metodo", Constantes.METODO), m, id);
             if (tablaSimbolos.buscarPorId(id) == null) {
-                boolean bandera = tablaSimbolos.agregarTablaSimbolos(metodo);
-                /*tablaSimbolos.print();*/
+                tablaSimbolos.agregarTablaSimbolos(metodo);
+                manejadorTablaPila.addTamanio();
                 return metodo; 
             } else {
                 vaciarAmbitos(parametros);
@@ -620,17 +699,22 @@ public class ManejadorSintacticoVB_PY extends ManejadorSintacticoJP{
             Metodo m = new Metodo();
             m.addStatements(statement);
             if (m.comporbarSiTieneReturnMetodo()) {
-                /*tablaSimbolos.print();*/
-                Simbolo f =  funcion(parametros, Constantes.FLOAT_VAR_VB_PY, statement, new Simbolo(Constantes.FLOAT_VAR_VB_PY, new Simbolo(Constantes.FLOAT_VAR_VB_PY, 0)), id, l, r);
+                ManejadorReturn manejadorReturn = ManejadorReturn.getInstancia();
+                Simbolo f =  funcion(parametros, manejadorReturn.obtenerReturn().getTipo(), statement, 
+                        new Simbolo(manejadorReturn.obtenerReturn().getTipo(), 
+                        new Simbolo(manejadorReturn.obtenerReturn().getTipo(), 0)), 
+                        id, l, r);
                 tablaSimbolos.removerSimbolosAll();
-                /*tablaSimbolos.print();*/
+                manejadorTablaPila.addTamanio();
+                manejadorCuartetos.finProcedimiento(true, true); 
                 return f;
             } else {
                 Simbolo ms = metodos(parametros, statement, id, l, r);
                 tablaSimbolos.removerSimbolosAll();
+                manejadorTablaPila.addTamanio();
+                manejadorCuartetos.finProcedimiento(true, false); 
                 return ms;
             }
-            
         }
     }
     

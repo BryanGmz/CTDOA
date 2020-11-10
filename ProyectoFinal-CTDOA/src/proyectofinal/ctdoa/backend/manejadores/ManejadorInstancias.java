@@ -40,7 +40,7 @@ public class ManejadorInstancias {
     public void nuevoAnalisis() {
         this.clasePY = null;
         this.claseVB = null;
-        this.clasesJAVA.clear();
+        this.clasesJAVA = null;
     }
 
     public Simbolo getClaseVB() {
@@ -54,7 +54,7 @@ public class ManejadorInstancias {
     public void addClasesJava(Object clases){
         if (clasesJAVA == null) {
             clasesJAVA = new ArrayList<>();
-        }
+        } clasesJAVA = new ArrayList<>();
         if (clases != null) {
             if (clases instanceof Simbolo) {
                 clasesJAVA.add((Simbolo) clases);
@@ -260,21 +260,40 @@ public class ManejadorInstancias {
     }
     
     public Cuarteto escribirFuncion(String funcion, Object params){
+        Cuarteto cuartetoProcedimiento;
         if (params != null) {
-            manejadorCuartetos.imprimirParams((List<Simbolo>) params);
-            return manejadorCuartetos.imprimirProcedimiento(funcion, params);
+            manejadorCuartetos.imprimirParams((List<Simbolo>) params, false);
+            cuartetoProcedimiento = manejadorCuartetos.imprimirProcedimiento(funcion, params);
+            return cuartetoProcedimiento;
         } else {
-            manejadorCuartetos.imprimirParams(new ArrayList<>());
+            manejadorCuartetos.imprimirParams(new ArrayList<>(), false);
+            return manejadorCuartetos.imprimirProcedimiento(funcion, new ArrayList<>());
+        }
+    }
+
+    public Cuarteto escribirFuncionJava(Simbolo function, String funcion, Object params){
+        Cuarteto cuartetoProcedimiento;
+        ManejadorConstructores manejadorConstructores = ManejadorConstructores.getInstancia();
+        cuartetoProcedimiento = manejadorConstructores.addReferenciaHeap(function);
+        ManejadorHeap manejadorHeap = ManejadorHeap.getInstancia();
+        manejadorHeap.setApuntadorThis(cuartetoProcedimiento);
+        if (params != null) {
+            manejadorCuartetos.imprimirParams((List<Simbolo>) params, true);
+            cuartetoProcedimiento = manejadorCuartetos.imprimirProcedimiento(funcion, params);
+            return cuartetoProcedimiento;
+        } else {
+            manejadorCuartetos.imprimirParams(new ArrayList<>(), true);
             return manejadorCuartetos.imprimirProcedimiento(funcion, new ArrayList<>());
         }
     }
     
-    public Simbolo searchSimbolo(String id, int caso, int l, int r, Object params, String idClase){
+    public Simbolo searchSimbolo(String objeto, String id, int caso, int l, int r, Object params, String idClase){
         switch (caso) {
             case 1: {
                 Simbolo s = msjp.getTablaSimbolos().buscarPorId("$VB");
                 if (s == null) {
                     msjp.errorSintax(l, r, "Libreria", "Error, no se encuentra definido la libreria. < VB >");
+                    return null;
                 }
                 Simbolo simbolo = buscarMetodo(claseVB, params, id, 1, l, r, idClase);
                 if (simbolo != null) {
@@ -292,15 +311,17 @@ public class ManejadorInstancias {
                         return null;
                     } else {
                         simbolo = buscarMetodo(searchClase(idClase, l, r), params, id, 2, l, r, idClase);
+                        Simbolo aux = msjp.getTablaSimbolos().buscarPorId(objeto);
                         if (simbolo != null) {
-                            simbolo.setCuarteto(escribirFuncion("JAVA_" + idClase + "_" + id, params));
+                            simbolo.setCuarteto(escribirFuncionJava(aux, "JAVA_" + idClase + "_" + id, params));
                         }
                         return simbolo;
                     }
                 } 
                 simbolo = buscarMetodo(searchClase(idClase, l, r), params, id, 2, l, r, idClase);
                 if (simbolo != null) {
-                    simbolo.setCuarteto(escribirFuncion("JAVA_" + idClase +"_" + id, params));
+                    Simbolo aux = msjp.getTablaSimbolos().buscarPorId(objeto);
+                    simbolo.setCuarteto(escribirFuncionJava(aux, "JAVA_" + idClase +"_" + id, params));
                 }
                 return simbolo;
             }
@@ -324,7 +345,7 @@ public class ManejadorInstancias {
             return null;
         }
         if (instacia.getTipo().getNombre().equals("Instancia")) {
-            return searchSimbolo(idFuncion, 2, l, r, params, instacia.getValor().toString());
+            return searchSimbolo(idInstacia, idFuncion, 2, l, r, params, instacia.getValor().toString());
         } 
         msjp.errorSemantico(l, r, idClase, "Error, la variable no es una instancia de una de las clases de java.");
         return null;

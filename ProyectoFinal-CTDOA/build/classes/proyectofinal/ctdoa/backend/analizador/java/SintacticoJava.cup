@@ -12,6 +12,10 @@ parser code {:
     public ManejadorSintacticoJP msJP = ManejadorSintacticoJP.getInstacia();
     public ManejadorInstancias mi = ManejadorInstancias.getInstance();
     public ManejadorCuartetos mc = ManejadorCuartetos.getInstancia();
+    public ManejadorHeap mh = ManejadorHeap.getInstancia();
+    public ManejadorTablaPila mtp = ManejadorTablaPila.getInstancia();
+    public ManejadorBuscarMetodos mbm = ManejadorBuscarMetodos.getInstancia();
+    public ManejadorThis mt = ManejadorThis.getInstancia();
     public int contadorLineas;
     private FrameCTDOA frameCTDOA;
 
@@ -37,11 +41,10 @@ parser code {:
     @Override
     public void syntax_error(Symbol s){
         try {
-            frameCTDOA.addErrores(
-                    "\nError de Sintaxis: " 
-                    + "\n\tLinea #:\t\t\t\t\t<< " + (s.right + 1) + " >>"
-                    + "\n\tColumna #\t\t\t\t\t<< " + (s.left + 1) + " >>"
-                    + "\n\tToken NO Reconocido:\t\t\t\t<< " + (s.value) + " >>" );
+            msJP.errorSintax(s.left, s.right, s.value, 
+                "Uf, error sintactico cerca de la linea y columna indicada porfavor revisa que el token\n "
+                        + "\t\tidicado corresponda a la declaracion de instruccion correspondiente. Vuelve a intentarlo."
+            );
         } catch (Exception e) {
             System.out.println("Error " + e.toString());
         }
@@ -72,7 +75,7 @@ non terminal estructura_mf, estructura_mf_p;
 non terminal return, return_dato, metodos_p;
 non terminal tipo_dato, p_parentesis, constructor_p;
 non terminal operaciones_aritmeticas, estruct_op;
-non terminal operaciones_asignacion;
+non terminal operaciones_asignacion, encabezado_clase_p, encabezado_clase;
 non terminal operaciones_logicas, tipos_comparacion;
 non terminal condicional, condicional_or, condicional_and, condicional_not;
 non terminal concatenacion, and, or, declaracion_variables_g;
@@ -80,15 +83,16 @@ non terminal mensaje_terminal, funcion_p;
 non terminal declaracion_variables, lista_id_valores, lista_id_p, lista_ids;
 non terminal asignacion_variables, asignacion;
 non terminal solicitud_datos, clases_s;
-non terminal while, while_n, while_p;
+non terminal while, while_n, while_p, llamada_fp, param, param_p;
 non terminal do_while, do_while_p, asignacion_variables_d ;
 non terminal for, var, for_var, for_condicional, for_asignacion;
 non terminal if, else, else_if, else_if_p;
 non terminal estructura_if, ii, ie, ee, switch_p;
 non terminal switch, caso_default, cantidad_casos, caso, caso_p;
-non terminal funcion, parametros, parametros_p, metodos, contructor;
+non terminal funcion, parametros, parametros_p, metodos, constructor;
 non terminal estructuras_p, estructuras, variables_locales, estruct;
 
+precedence left PUBLIC;
 precedence left PUNTO_COMA;
 precedence left MAS, MENOS;
 precedence left POR, DIV, MOD;
@@ -111,22 +115,26 @@ inicio ::=
 /*************************************** Clases ***************************************/
 
 clases_s ::=
-    PUBLIC CLASS ID:a CORCHETE_A                {:RESULT = a; parser.mc.addClaseActual(a);:}
+    PUBLIC CLASS ID:a CORCHETE_A                
+    {:
+        RESULT = a; parser.mc.addClaseActual(a);
+        ManejadorHeap mh = ManejadorHeap.getInstancia();
+        mh.setPrincipal(true);
+    :} 
 ;
 
 clases ::=
-    clases_s:a
-        variables_locales:e
-        contructor:i
+    encabezado_clase:a
         estructura_mf_p:o
     CORCHETE_C                                  
-    {:RESULT = parser.msJP.claseJava((String) a, e, (Simbolo) i, o, aleft, aright); parser.mc.finClase();:}
-    | clases_s:a
-        variables_locales:e
-        estructura_mf_p:i
-    CORCHETE_C                                  
-    {:RESULT = parser.msJP.claseJava((String) a, e, null, i, aleft, aright); parser.mc.finClase();:}
-    | error:e CORCHETE_C                                    {:parser.syntax_error((Symbol) e);:}    
+    {:
+        Auxiliar aux = (Auxiliar) a;
+        RESULT = parser.msJP.claseJava((String) aux.getA(), aux.getE(), (Simbolo) aux.getI(), o, aleft, aright); 
+        parser.mc.finClase();
+        parser.mtp.addResetMemoriaHeap();
+    :}
+    | error:e CORCHETE_C                                    
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de clases, no se esperaba el token indicado para la contruccion de una nueva clase.");:}
 ;
 
 clases_p ::=
@@ -148,24 +156,56 @@ clases_p ::=
     |                                                       {:RESULT = new ArrayList<>();:} 
 ;
 
-constructor_p ::=
-    PUBLIC ID:a PARENTESIS_A parametros:e PARENTESIS_C CORCHETE_A
-    {:parser.mc.addCuartetoProcedimientoJava(a, "JAVA", e, null); 
-    RESULT = new Procedimiento(a, e);:}
+encabezado_clase_p ::=
+    clases_s:a
+    variables_locales:e
+    {:  
+        parser.mtp.reset();
+        RESULT = new Auxiliar(a, e, null);
+    :}
 ;
 
-contructor ::=
+encabezado_clase ::=
+    encabezado_clase_p:e
+    {:
+        ManejadorConstructores manejadorConstructores = ManejadorConstructores.getInstancia(); 
+        manejadorConstructores.sinConstructor();
+        RESULT = e;
+    :}
+    | encabezado_clase_p:e
+        constructor:i
+    {:
+        Auxiliar aux = (Auxiliar) e;
+        aux.setI(i);
+        RESULT = aux;
+    :}
+;
+
+
+constructor_p ::=
+    PUBLIC ID:a PARENTESIS_A parametros:e PARENTESIS_C CORCHETE_A
+    {:
+        parser.mc.addCuartetoProcedimientoJava(a, "JAVA", e, null); 
+        parser.mh.agregarInstancias();
+        ManejadorConstructores manejadorConstructor = ManejadorConstructores.getInstancia();
+        manejadorConstructor.agregarConstructorVacio();
+        RESULT = new Procedimiento(a, e);
+    :}
+;
+
+constructor ::=
     constructor_p:e
         estructuras_p:c
     CORCHETE_C     
-    {:RESULT = parser.msJP.metodos(((Procedimiento) e).getE(), c, ((Procedimiento) e).getU(), eleft, eright);
-    parser.mc.finProcedimiento(false);:}
+    {:
+    RESULT = parser.msJP.metodos(((Procedimiento) e).getE(), c, ((Procedimiento) e).getU(), eleft, eright);
+    parser.mc.finProcedimiento(false, false);:}
 ;
 
 /***************************** Declaracion de Variables Locales ***********************/
 
 variables_locales ::=
-    variables_locales:a estruct:e
+    estruct:e variables_locales:a 
     {:
         List<Simbolo> listaSimbolos = new ArrayList<>();
         if(a != null) {
@@ -184,9 +224,7 @@ variables_locales ::=
 ;
 
 estruct ::=
-    PUBLIC declaracion_variables_g:a PUNTO_COMA               {:RESULT = a;:}
-    | declaracion_variables_g:a PUNTO_COMA                    {:RESULT = a;:}
-    | error:e PUNTO_COMA                    {:parser.syntax_error((Symbol) e);:}    
+    declaracion_variables_g:a PUNTO_COMA                    {:RESULT = a;:}   
 ;
 
 /********************************** Metodos y Funciones *******************************/
@@ -194,7 +232,8 @@ estruct ::=
 estructura_mf ::=
     metodos:e                           {:RESULT = e;:}
     | funcion:e                         {:RESULT = e;:}
-    | error:e CORCHETE_C                {:parser.syntax_error((Symbol) e);:}        
+    | error:e
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de procedimientos, no se esperaba el token indicado para la contruccion de una nuevo procedimiento.");:}        
 ;
 
 estructura_mf_p ::=
@@ -236,6 +275,8 @@ return_dato ::=
 	RESULT = new Simbolo(Constantes.CHAR_VAR_PJ, a);
     :}
     | operaciones_aritmeticas:e             {:RESULT = e;:}
+    | error:e
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en los datos que se asignaran, no se esperaba el token indicado.");:}
 ;
 
 /************************************ Tipo de Dato ************************************/
@@ -261,8 +302,21 @@ operaciones_aritmeticas ::=
 estruct_op ::=
     PARENTESIS_A operaciones_aritmeticas:e PARENTESIS_C             {:RESULT = e;:}
     | ID:e                                                          {:RESULT = parser.msJP.metodoBuscarID(e.toString(), eleft, eright);:}
+    | THIS PUNTO ID:e /*Agregar una funcion this*/                  {:RESULT = parser.mt.buscarIDThis(e.toString(), eleft, eright);:}
     | NUMERO:e                                                      {:RESULT = new Simbolo(Constantes.INT_VAR_VB_PY, e);:}
     | REAL:e                                                        {:RESULT = new Simbolo(Constantes.FLOAT_VAR_VB_PY, e);:}
+    | llamada_fp:a          
+    {:
+        if(a != null) {
+            Tipo tipo = ((Simbolo) a).getTipoFuncion();
+            if(tipo != null && tipo.getNombre().equals("Funcion")) {
+                RESULT = a;
+            } else {
+                parser.msJP.errorSemantico(aleft, aright, "Asignacion", "Error, los metodos no pueden asignarse.");
+                RESULT = null;
+            }
+        }
+    :}
 ;
 
 /************************** Operaciones de Asignacion *********************************/
@@ -280,6 +334,8 @@ operaciones_asignacion ::=
     :}
     | ID:a MAS_MAS                  {:RESULT = (new Simbolo(Constantes.INT_VAR_PJ, -1, a));:}
     | ID:a MENOS_MENOS              {:RESULT = (new Simbolo(Constantes.INT_VAR_PJ, -2, a));:}
+    | error:e
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la asignacion de incremento en la estructura for.");:}
 ;
 
 /***************************** Operaciones Logicas ************************************/
@@ -305,6 +361,11 @@ tipos_comparacion ::=
 
 condicional ::=
     condicional_or:e                                        {:parser.mc.nuevoAnalisisBoolean(); RESULT = e;:}
+    | error:e CORCHETE_C
+    {:
+        parser.mc.nuevoAnalisisBoolean();  
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");
+    :}
 ;
 
 and ::=
@@ -318,6 +379,8 @@ or ::=
 condicional_or ::=
     condicional_or:a or:c condicional_or:e                      {:RESULT = parser.msJP.comprobacionCondicional(a, e, 2, cleft, cright);:}
     | condicional_and:a                                         {:RESULT = a;:}
+    | error:e
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
 ;
 
 condicional_and ::= 
@@ -331,11 +394,12 @@ condicional_not ::=
 ;
 
 /********************************** Concatenacion *************************************/
-
+ 
 concatenacion ::=
     concatenacion MAS concatenacion
-    | CADENA:e                                  {:parser.mc.imprimir(new Simbolo(null, e)); RESULT = e;:}
-    | estruct:e                                 {:parser.mc.imprimir((Simbolo) e); RESULT = e;:}
+    | CADENA:e                                      {:parser.mc.imprimir(new Simbolo(null, e)); RESULT = e;:}
+    | estruct_op:e                                  {:parser.mc.imprimirPrintf(0, (Simbolo) e); RESULT = e;:}
+    | error:e                                       {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la concatenacion de cadenas, de la instruccion System.out.print.");:}
 ;
 
 /******************************** Mensaje en Pantalla *********************************/
@@ -352,13 +416,16 @@ declaracion_variables_g ::=
 ;
 
 declaracion_variables ::=
-    //Estoy retornando el identificador y la lista de simbolos para poder agregarlo despues
     tipo_dato:a lista_ids:e                                 {:RESULT = parser.msJP.declararVariables(new Simbolo((Tipo)a, e), aleft, aright);:}
 ;
 
 lista_id_valores ::=
-    asignacion_variables_d:e                                  {:RESULT = e;:} 
+    asignacion_variables_d:e                                {:RESULT = e;:} 
     | ID:a                                                  {:RESULT = new Simbolo(null, null, a.toString());:}
+    | error:e
+    {:
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de variables, no se esperaba el token indicado.");
+    :}
 ;
 
 lista_ids ::=
@@ -415,10 +482,10 @@ asignacion_variables_d ::=
 asignacion_variables ::=
     ID:a IGUAL asignacion:e
     {:
-        if(e != null) {      
-            parser.msJP.asignacionVariables(new Simbolo(((Simbolo) e).getTipo(), ((Simbolo) e), a), aleft, aright);
+        if(e != null) {
+            RESULT = new Simbolo(((Simbolo) e).getTipo(), (Simbolo) e, a);
         } else { 
-            parser.msJP.asignacionVariables(null, aleft, aright);
+            RESULT = e;
         }
     :}
 ;
@@ -439,6 +506,10 @@ solicitud_datos ::=
 p_parentesis ::=
     PARENTESIS_A CADENA:e PARENTESIS_C      {:parser.mc.imprimir(new Simbolo(null, e));:}
     | PARENTESIS_A PARENTESIS_C
+    | error:e PARENTESIS_C
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de solicitud de datos, se esperaba una cadena.");:}
+    | error:e
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de solicitud de datos, se esperaba una cadena.");:}
 ;
 
 /************************************* While ******************************************/
@@ -452,7 +523,7 @@ while_p ::=
     {:
         parser.mc.nuevoAnalisisBoolean();
         parser.mc.escribirEtiquetasInicio(false);
-        parser.mc.escribirEtiquetaFin();
+        parser.mc.addEtiquetasEstructuras();
         ((While) w).setA(a);
         RESULT = w;
     :}
@@ -535,6 +606,8 @@ for ::=
 var ::=
     ID:a IGUAL operaciones_aritmeticas:e                    {:RESULT = parser.msJP.comprobarAsignacionFor(e, a, aleft, aright, null);:}
     | tipo_dato:a ID:e IGUAL return_dato:i                  {:RESULT = parser.msJP.comprobarAsignacionFor(i, e, eleft, eright, (Tipo) a);:}    
+    | error:e
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de datos, de la instruccion for, no se esperaba el token indicado.");:}
 ;
 
 /****************************** estructuras if ****************************************/
@@ -618,6 +691,12 @@ caso_default ::=
         parser.mc.etiquetaGoto();
         RESULT = parser.msJP.crearEstructuraCases(null, a, aleft, aright, true);
     :}
+    | DEFAULT DOS_PUNTOS
+        estructuras_p:a
+    {:  
+        parser.mc.etiquetaGoto();
+        RESULT = parser.msJP.crearEstructuraCases(null, a, aleft, aright, true);
+    :}
     |   {:parser.mc.etiquetaGoto();:}
 ;
 
@@ -651,8 +730,18 @@ caso ::=
 
 funcion_p ::=
     PUBLIC tipo_dato:a ID:e PARENTESIS_A parametros:i PARENTESIS_C CORCHETE_A   
-    {:parser.mc.addCuartetoProcedimientoJava(e, "JAVA", i, (Tipo) a);
-    RESULT = new Procedimiento(e, i, (Tipo) a);:}
+    {:
+        parser.mc.addCuartetoProcedimientoJava(e, "JAVA", i, (Tipo) a);
+        Simbolo  s = new Simbolo((Tipo) a, null, e);
+        Funcion f = new Funcion();
+        f.setParametros(i);
+        s.setValor(f);
+        s.setTipo(new Tipo("Funcion", Constantes.FUNCION));
+        s.setTipoFuncion((Tipo) a);
+        RESULT = new Procedimiento(e, i, (Tipo) a);
+        parser.mtp.addThis();
+        parser.msJP.declaraUnaVariable(s, aleft, aright);
+    :}
 ;
 
 funcion ::= 
@@ -661,7 +750,7 @@ funcion ::=
     CORCHETE_C                                              
     {:
         RESULT = parser.msJP.funcion(((Procedimiento) e).getE(), ((Procedimiento) e).getA(), o, null, ((Procedimiento) e).getU(), oleft, oright);
-        parser.mc.finProcedimiento(false);
+        parser.mc.finProcedimiento(false, true);
     :}
 ;
 
@@ -704,41 +793,99 @@ parametros_p ::=
         }
         RESULT = listaSimbolos;
     :}
+    | error:e
+    {: 
+        RESULT = new ArrayList<>();
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de parametros, no se esperaba el token indicado.");
+    :}
 ;
 
 /********************************** metodos ********************************************/
 
 metodos_p ::=
     PUBLIC VOID ID:a PARENTESIS_A parametros:e PARENTESIS_C CORCHETE_A
-    {:parser.mc.addCuartetoProcedimientoJava(a, "JAVA", e, null); 
-    RESULT = new Procedimiento(a, e);:}
+    {:
+        parser.mc.addCuartetoProcedimientoJava(a, "JAVA", e, null); 
+        RESULT = new Procedimiento(a, e);
+        parser.mtp.addThis();
+    :}
 ;
 
 metodos ::= 
     metodos_p:e
         estructuras_p:i                                     
     CORCHETE_C                    
-    {:RESULT = parser.msJP.metodos(((Procedimiento) e).getE(), i, ((Procedimiento) e).getU(), ileft, iright);
-    parser.mc.finProcedimiento(false);:}
+    {:
+    RESULT = parser.msJP.metodos(((Procedimiento) e).getE(), i, ((Procedimiento) e).getU(), ileft, iright);
+    parser.mc.finProcedimiento(false, false);
+    :}
 ;
 
 estructuras ::=
     mensaje_terminal PUNTO_COMA                                                 {:RESULT = null;:}
     | solicitud_datos PUNTO_COMA                                                {:RESULT = null;:}
     | declaracion_variables:a PUNTO_COMA                                        {:RESULT = a;:}
-    | asignacion_variables:e PUNTO_COMA                                         {:RESULT = e;:}
+    | asignacion_variables:e PUNTO_COMA                                         
+    {:
+        if(e != null) {      
+            parser.msJP.asignacionVariables(e, eleft, eright);
+        } else { 
+            parser.msJP.asignacionVariables(null, eleft, eright);
+        }
+    :}
     | while:e                                                                   {:RESULT = e;:}
     | do_while:e                                                                {:RESULT = e;:}
     | for:e                                                                     {:RESULT = e;:}
     | estructura_if:e                                                           {:RESULT = e;:}
     | switch:e                                                                  {:RESULT = e;:}
+    | llamada_fp PUNTO_COMA                        
+    {:
+        Object as = null;
+        parser.mc.addYRemovePuntero(as, false);
+    :}
     | return:e PUNTO_COMA                                                       {:RESULT = e;:}
     | THIS PUNTO ID:a IGUAL asignacion:e PUNTO_COMA                             {:parser.msJP.asignacionVariablesThis(a, e, aleft, aright);:}
-    | error:e PUNTO_COMA                    {:parser.syntax_error((Symbol) e);:}    
-    | error:e CORCHETE_C                    {:parser.syntax_error((Symbol) e);:}  
+    | error:e PUNTO_COMA                   
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
+    | error:e CORCHETE_C                    
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
 ;
 
 estructuras_p ::=
     estructuras:a estructuras_p:e           {:RESULT = parser.msJP.simbolosReturn(e, a, aleft, aright);:}
     |                                       {:RESULT = null;:}
+;
+
+llamada_fp ::=
+    ID:a PARENTESIS_A param:e PARENTESIS_C 
+    {:RESULT = parser.mbm.buscarMetodo("JAVA_" + parser.mc.getClaseActual() + "_", a, e, aleft, aright, 3, false);:}
+;
+
+param ::=
+    operaciones_aritmeticas:e param_p:a                 
+    {:
+        List<Simbolo> lista = new ArrayList<>();
+        if (e != null) {
+            lista.add((Simbolo) e);
+        }
+        if(a instanceof Simbolo) {
+            lista.add((Simbolo) a);
+        } else {
+            lista.addAll((List<Simbolo>) a);
+        }
+        RESULT = lista;
+    
+    :} 
+    | operaciones_aritmeticas:e                         {:RESULT = e;:} 
+    | 
+;
+
+param_p ::=
+    COMA operaciones_aritmeticas:e                     {:RESULT = e;:}
+    | param_p:a COMA operaciones_aritmeticas:e         {:RESULT = parser.msJP.lista(a, e);:}
+    | error:e
+    {: 
+        RESULT = new ArrayList<>();
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros.");
+    :}
 ;

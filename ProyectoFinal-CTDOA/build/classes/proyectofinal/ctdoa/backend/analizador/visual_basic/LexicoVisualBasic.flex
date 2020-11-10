@@ -154,6 +154,7 @@ D = [0-9]
     ( Function )    {return new Symbol(sym.FUNCTION, yycolumn, yyline, yytext());}
     ( Sub )         {return new Symbol(sym.SUB, yycolumn, yyline, yytext());}
     ( Return )      {return new Symbol(sym.RETURN, yycolumn, yyline, yytext());}
+    ( ByVal )       {return new Symbol(sym.BYVAL, yycolumn, yyline, yytext());}
 
     /* Otros */
 

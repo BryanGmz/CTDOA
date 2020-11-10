@@ -1,0 +1,37 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package proyectofinal.ctdoa.backend.objetos;
+
+/**
+ *
+ * @author bryangmz
+ */
+public class SimboloPrint {
+    
+    private int comodin;
+    private String mensaje;
+
+    public SimboloPrint(int comodin, String mensaje) {
+        this.comodin = comodin;
+        this.mensaje = mensaje;
+    }
+
+    public int getComodin() {
+        return comodin;
+    }
+
+    public void setComodin(int comodin) {
+        this.comodin = comodin;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public void setMensaje(String mensaje) {
+        this.mensaje = mensaje;
+    }
+}

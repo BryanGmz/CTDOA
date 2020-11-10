@@ -21,6 +21,10 @@ public class TablaSimbolos {
         this.simbolos = new ArrayList<>();
     }
 
+    public List<Simbolo> getSimbolos() {
+        return simbolos;
+    }
+
     public Simbolo getUltimo(){
         if (!simbolos.isEmpty()) {
             return simbolos.get(simbolos.size() - 1);

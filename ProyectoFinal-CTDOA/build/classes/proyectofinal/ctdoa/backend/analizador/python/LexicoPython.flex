@@ -71,7 +71,6 @@ D = [0-9]
     private Symbol symbol(int type){
         return new Symbol(type, yyline + 1, yycolumn + 1);
     }
-
 %}
 %%
 
@@ -81,14 +80,15 @@ D = [0-9]
     
     { WhiteSpace }      {/*Ignore*/}
     ( "â" )*          {/*Ignore*/}
-    ( " " )*            {/*Ignore*/}
+    ( " " )             {/*Ignore*/}
+    ( "\b" )             {/*Ignore*/}
     { Comment }         {mc.addComentario(yytext());}
 
     /* Solicitud de Datos */
     
-    {IInput}        {/*System.out.println(yytext()); */return new Symbol(sym.IINPUT, yycolumn, yyline, new String(yytext()));}
-    {FInput}        {/*System.out.println(yytext()); */return new Symbol(sym.FINPUT, yycolumn, yyline, new String(yytext()));}
-    {CInput}        {/*System.out.println(yytext()); */return new Symbol(sym.CINPUT, yycolumn, yyline, new String(yytext()));}
+    {IInput}        {/*System.out.println(yytext());*/return new Symbol(sym.IINPUT, yycolumn, yyline, new String(yytext()));}
+    {FInput}        {/*System.out.println(yytext());*/return new Symbol(sym.FINPUT, yycolumn, yyline, new String(yytext()));}
+    {CInput}        {/*System.out.println(yytext());*/return new Symbol(sym.CINPUT, yycolumn, yyline, new String(yytext()));}
         
     { IDent }        {
                         int tab = 0;
@@ -142,75 +142,79 @@ D = [0-9]
 
     /* Cadena  */
     
-    {Cadena}        {/*System.out.println(yytext()); */return new Symbol(sym.CADENA, yycolumn, yyline, new String(yytext()));}  
+    {Cadena}        {/*System.out.println(yytext());*/return new Symbol(sym.CADENA, yycolumn, yyline, new String(yytext()));}  
 
     /* Caracteres */ 
     
-    {Caracter}      {/*System.out.println(yytext()); */return new Symbol(sym.CARACTER, yycolumn, yyline, new String(yytext()));}  
+    {Caracter}      {/*System.out.println(yytext());*/return new Symbol(sym.CARACTER, yycolumn, yyline, new String(yytext()));}  
 
     /* Operadores - Aritmeticos  */
     
-    ( "+" )             {/*System.out.println(yytext()); */return new Symbol(sym.MAS, yycolumn, yyline, yytext());}
-    ( "-" )             {/*System.out.println(yytext()); */return new Symbol(sym.MENOS, yycolumn, yyline, yytext());}
-    ( "*" )             {/*System.out.println(yytext()); */return new Symbol(sym.POR, yycolumn, yyline, yytext());}
-    ( "/" )             {/*System.out.println(yytext()); */return new Symbol(sym.DIV, yycolumn, yyline, yytext());}
-    ( "%" )             {/*System.out.println(yytext()); */return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
+    ( "+" )             {/*System.out.println(yytext());*/return new Symbol(sym.MAS, yycolumn, yyline, yytext());}
+    ( "MOD" )           {/*System.out.println(yytext());*/return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
+    ( "-" )             {/*System.out.println(yytext());*/return new Symbol(sym.MENOS, yycolumn, yyline, yytext());}
+    ( "*" )             {/*System.out.println(yytext());*/return new Symbol(sym.POR, yycolumn, yyline, yytext());}
+    ( "/" )             {/*System.out.println(yytext());*/return new Symbol(sym.DIV, yycolumn, yyline, yytext());}
     
     /* Operadores - Comparacion */
 
-    ( "=" )             {/*System.out.println(yytext()); */return new Symbol(sym.IGUAL, yycolumn, yyline, yytext());}
-    ( "<>" )            {/*System.out.println(yytext()); */return new Symbol(sym.DIFERENTE, yycolumn, yyline, yytext());}
-    ( "!=" )            {/*System.out.println(yytext()); */return new Symbol(sym.DISTINTO, yycolumn, yyline, yytext());}
-    ( "==" )            {/*System.out.println(yytext()); */return new Symbol(sym.IGUAL_IGUAL, yycolumn, yyline, yytext());}
-    ( "<" )             {/*System.out.println(yytext()); */return new Symbol(sym.MENOR, yycolumn, yyline, yytext());}
-    ( ">" )             {/*System.out.println(yytext()); */return new Symbol(sym.MAYOR, yycolumn, yyline, yytext());}
-    ( "<=" )            {/*System.out.println(yytext()); */return new Symbol(sym.MENOR_IGUAL, yycolumn, yyline, yytext());} 
-    ( ">=" )            {/*System.out.println(yytext()); */return new Symbol(sym.MAYOR_IGUAL, yycolumn, yyline, yytext());}
-    ( not )             {/*System.out.println(yytext()); */return new Symbol(sym.NOT, yycolumn, yyline, yytext());}
-    ( and )             {/*System.out.println(yytext()); */return new Symbol(sym.AND, yycolumn, yyline, yytext());}
-    ( or )              {/*System.out.println(yytext()); */return new Symbol(sym.OR, yycolumn, yyline, yytext());}
+    ( "=" )             {/*System.out.println(yytext());*/return new Symbol(sym.IGUAL, yycolumn, yyline, yytext());}
+    ( "<>" )            {/*System.out.println(yytext());*/return new Symbol(sym.DIFERENTE, yycolumn, yyline, yytext());}
+    ( "!=" )            {/*System.out.println(yytext());*/return new Symbol(sym.DISTINTO, yycolumn, yyline, yytext());}
+    ( "==" )            {/*System.out.println(yytext());*/return new Symbol(sym.IGUAL_IGUAL, yycolumn, yyline, yytext());}
+    ( "<" )             {/*System.out.println(yytext());*/return new Symbol(sym.MENOR, yycolumn, yyline, yytext());}
+    ( ">" )             {/*System.out.println(yytext());*/return new Symbol(sym.MAYOR, yycolumn, yyline, yytext());}
+    ( "<=" )            {/*System.out.println(yytext());*/return new Symbol(sym.MENOR_IGUAL, yycolumn, yyline, yytext());} 
+    ( ">=" )            {/*System.out.println(yytext());*/return new Symbol(sym.MAYOR_IGUAL, yycolumn, yyline, yytext());}
+    ( not )             {/*System.out.println(yytext());*/return new Symbol(sym.NOT, yycolumn, yyline, yytext());}
+    ( and )             {/*System.out.println(yytext());*/return new Symbol(sym.AND, yycolumn, yyline, yytext());}
+    ( or )              {/*System.out.println(yytext());*/return new Symbol(sym.OR, yycolumn, yyline, yytext());}
     
     /* Palabras Reservadas */
 
-    ( print )       {/*System.out.println(yytext()); */return new Symbol(sym.PRINT, yycolumn, yyline, yytext());}
-    ( while )       {/*System.out.println(yytext()); */return new Symbol(sym.WHILE, yycolumn, yyline, yytext());}
-    ( for )         {/*System.out.println(yytext()); */return new Symbol(sym.FOR, yycolumn, yyline, yytext());}
-    ( in )          {/*System.out.println(yytext()); */return new Symbol(sym.IN, yycolumn, yyline, yytext());}
-    ( range )       {/*System.out.println(yytext()); */return new Symbol(sym.RANGE, yycolumn, yyline, yytext());}
-    ( if )          {/*System.out.println(yytext()); */return new Symbol(sym.IF, yycolumn, yyline, yytext());}
-    ( else )        {/*System.out.println(yytext()); */return new Symbol(sym.ELSE, yycolumn, yyline, yytext());}
-    ( elif )        {/*System.out.println(yytext()); */return new Symbol(sym.ELIF, yycolumn, yyline, yytext());}
-    ( def )         {/*System.out.println(yytext()); */return new Symbol(sym.DEF, yycolumn, yyline, yytext());}
-    ( return )      {/*System.out.println(yytext()); */return new Symbol(sym.RETURN, yycolumn, yyline, yytext());}
+    ( print )       {/*System.out.println(yytext());*/return new Symbol(sym.PRINT, yycolumn, yyline, yytext());}
+    ( while )       {/*System.out.println(yytext());*/return new Symbol(sym.WHILE, yycolumn, yyline, yytext());}
+    ( for )         {/*System.out.println(yytext());*/return new Symbol(sym.FOR, yycolumn, yyline, yytext());}
+    ( in )          {/*System.out.println(yytext());*/return new Symbol(sym.IN, yycolumn, yyline, yytext());}
+    ( range )       {/*System.out.println(yytext());*/return new Symbol(sym.RANGE, yycolumn, yyline, yytext());}
+    ( if )          {/*System.out.println(yytext());*/return new Symbol(sym.IF, yycolumn, yyline, yytext());}
+    ( else )        {/*System.out.println(yytext());*/return new Symbol(sym.ELSE, yycolumn, yyline, yytext());}
+    ( elif )        {/*System.out.println(yytext());*/return new Symbol(sym.ELIF, yycolumn, yyline, yytext());}
+    ( def )         {/*System.out.println(yytext());*/return new Symbol(sym.DEF, yycolumn, yyline, yytext());}
+    ( return )      {/*System.out.println(yytext());*/return new Symbol(sym.RETURN, yycolumn, yyline, yytext());}
 
     /* Otros */
 
-    ( "," )         {/*System.out.println(yytext()); */return new Symbol(sym.COMA, yycolumn, yyline, yytext());}
-    ( ":" )         {/*System.out.println(yytext()); */return new Symbol(sym.DOS_PUNTOS, yycolumn, yyline, yytext());}
-    ( "(" )         {/*System.out.println(yytext()); */return new Symbol(sym.PARENTESIS_A, yycolumn, yyline, yytext());}
-    ( ")" )         {/*System.out.println(yytext()); */return new Symbol(sym.PARENTESIS_C, yycolumn, yyline, yytext());}
+    ( "," )         {/*System.out.println(yytext());*/return new Symbol(sym.COMA, yycolumn, yyline, yytext());}
+    ( ":" )         {/*System.out.println(yytext());*/return new Symbol(sym.DOS_PUNTOS, yycolumn, yyline, yytext());}
+    ( "(" )         {/*System.out.println(yytext());*/return new Symbol(sym.PARENTESIS_A, yycolumn, yyline, yytext());}
+    ( ")" )         {/*System.out.println(yytext());*/return new Symbol(sym.PARENTESIS_C, yycolumn, yyline, yytext());}
     
     /*************************************************Expresiones*******************************************/
             
     /* Numero */
 
-    {D}+                                                {/*System.out.println(yytext()); */return new Symbol(sym.NUMERO, yycolumn, yyline, Integer.parseInt(yytext()));}
+    {D}+                                                {/*System.out.println(yytext());*/return new Symbol(sym.NUMERO, yycolumn, yyline, Integer.parseInt(yytext()));}
 
     /* Version */
     
-    ({D}+ (("."){D}+))                                  {/*System.out.println(yytext()); */return new Symbol(sym.REAL, yycolumn, yyline, Float.parseFloat(yytext()));}
+    ({D}+ (("."){D}+))                                  {/*System.out.println(yytext());*/return new Symbol(sym.REAL, yycolumn, yyline, Float.parseFloat(yytext()));}
 
     /* Identificador */
 
-    (({L} | "_")+({L} | {D} | "_")*)                    {/*System.out.println(yytext()); */return new Symbol(sym.ID, yycolumn, yyline, new String(yytext()));}
+    (({L} | "_")+({L} | {D} | "_")*)                    {/*System.out.println(yytext());*/return new Symbol(sym.ID, yycolumn, yyline, new String(yytext()));}
 
     /* Error */
 
     . {
+        if(yytext().equals("	"))
+            System.out.println("Error");
+        else {
             frameCTDOA.addErrores(
                       "\nError Lexico: "
               + "\n\tLinea #:                     << " + (yyline + 1) + " >> "
               + "\n\tColumna #:                   << " + (yycolumn + 1) + " >> "
               + "\n\tToken NO Reconocido:         << " + yytext() + " >> ");
+        }
     } 
 }

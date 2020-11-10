@@ -20,10 +20,10 @@ public class ProyectoFinalCTDOA {
      * @throws java.lang.Exception
      */
     public static void main(String[] args) throws Exception {
-//        GeneradorArchivo.generador(1);
-//        GeneradorArchivo.generador(2);
-//        GeneradorArchivo.generador(4);
-//        GeneradorArchivo.generador(3);
+        GeneradorArchivo.generador(1);
+        GeneradorArchivo.generador(3);
+        GeneradorArchivo.generador(2);
+        GeneradorArchivo.generador(4);
         try {
             // TODO code application logic here
             javax.swing.UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");

@@ -21,8 +21,15 @@ import javax.swing.JTextArea;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import proyectofinal.ctdoa.backend.analizador.c.LexicoC;
 import proyectofinal.ctdoa.backend.analizador.c.SintacticoC;
+import proyectofinal.ctdoa.backend.assembler.ManejadorGenerarAssembler;
+import proyectofinal.ctdoa.backend.manejadores.ManejadorCTD;
+import proyectofinal.ctdoa.backend.manejadores.ManejadorCTDEjecutable;
 import proyectofinal.ctdoa.backend.manejadores.ManejadorCuartetos;
+import proyectofinal.ctdoa.backend.manejadores.ManejadorEjecutarCodigo;
+import proyectofinal.ctdoa.backend.manejadores.ManejadorHeap;
+import proyectofinal.ctdoa.backend.manejadores.ManejadorInstancias;
 import proyectofinal.ctdoa.backend.manejadores.ManejadorSintacticoJP;
+import proyectofinal.ctdoa.backend.manejadores.ManejadorTablaPila;
 import proyectofinal.ctdoa.backend.objetos.Pestaña;
 
 /**
@@ -37,9 +44,10 @@ public class FrameCTDOA extends javax.swing.JFrame {
     
     /* Area de Constantes */
     private static final FileNameExtensionFilter EXTENSION_MLG = new FileNameExtensionFilter("Archivos que almacenan el Código Fuente. (.mlg)", "mlg");
-    private static final FileNameExtensionFilter EXTENSION_CPP = new FileNameExtensionFilter("Archivos que almacenan Código en Tres direcciones o Código Optimizado. (.cpp)", "cpp");
+    private static final FileNameExtensionFilter EXTENSION_CPP = new FileNameExtensionFilter("Archivos que almacenan Código en Tres direcciones (.c)", "c");
     private static final FileNameExtensionFilter EXTENSION_ASM = new FileNameExtensionFilter("Archivos que almacenan Código Assembler. (.asm)", "asm");
     private ManejadorSintacticoJP jP;
+    private TablaSimbolos tablaSimbolos;
     
     /**
      * Creates new form FrameCTDOA
@@ -49,6 +57,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
         this.pestañas = new ArrayList<>();
         this.jP = ManejadorSintacticoJP.getInstacia();
         this.agregarPestanias();
+        this.tablaSimbolos = new TablaSimbolos(this, true);
         this.setLocationRelativeTo(null);
     }
 
@@ -94,12 +103,11 @@ public class FrameCTDOA extends javax.swing.JFrame {
         menuSalir = new javax.swing.JMenuItem();
         menuGenerarCodigo = new javax.swing.JMenu();
         codigoTresDirecciones = new javax.swing.JMenuItem();
-        codigoOptimizado = new javax.swing.JMenuItem();
         codigoAsembler = new javax.swing.JMenuItem();
         menuEjecutar = new javax.swing.JMenu();
         ejecutarTresDirecciones = new javax.swing.JMenuItem();
-        ejecutarOptimizado = new javax.swing.JMenuItem();
         ejecutarAssembler = new javax.swing.JMenuItem();
+        menuTablaSimbolos = new javax.swing.JMenu();
 
         jScrollPane1.setViewportView(jTextPane1);
 
@@ -179,12 +187,13 @@ public class FrameCTDOA extends javax.swing.JFrame {
         });
         menuGenerarCodigo.add(codigoTresDirecciones);
 
-        codigoOptimizado.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
-        codigoOptimizado.setText("Optimizado");
-        menuGenerarCodigo.add(codigoOptimizado);
-
         codigoAsembler.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         codigoAsembler.setText("Assembler");
+        codigoAsembler.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                codigoAsemblerActionPerformed(evt);
+            }
+        });
         menuGenerarCodigo.add(codigoAsembler);
 
         menu.add(menuGenerarCodigo);
@@ -193,17 +202,26 @@ public class FrameCTDOA extends javax.swing.JFrame {
 
         ejecutarTresDirecciones.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.ALT_MASK));
         ejecutarTresDirecciones.setText("Tres Direcciones");
+        ejecutarTresDirecciones.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ejecutarTresDireccionesActionPerformed(evt);
+            }
+        });
         menuEjecutar.add(ejecutarTresDirecciones);
-
-        ejecutarOptimizado.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.ALT_MASK));
-        ejecutarOptimizado.setText("Optimizado");
-        menuEjecutar.add(ejecutarOptimizado);
 
         ejecutarAssembler.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.ALT_MASK));
         ejecutarAssembler.setText("Assembler");
         menuEjecutar.add(ejecutarAssembler);
 
         menu.add(menuEjecutar);
+
+        menuTablaSimbolos.setText("Tabla  Simbolos");
+        menuTablaSimbolos.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                menuTablaSimbolosMouseClicked(evt);
+            }
+        });
+        menu.add(menuTablaSimbolos);
 
         setJMenuBar(menu);
 
@@ -271,6 +289,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
                 lblSeleccionado.setText("Seleccionado: " + pestañas.get(0).getNombre());
                 JOptionPane.showMessageDialog(this, "Agregado");
             } catch (IOException ex) {
+                ex.printStackTrace();
                 System.out.println("Error en carga archivo .len");
             }
         }
@@ -325,29 +344,67 @@ public class FrameCTDOA extends javax.swing.JFrame {
             if (pestañaActual.getTitulo().equalsIgnoreCase("Programa")) {
                 try {
                     if (!pestañaActual.getTextArea().getText().isEmpty()) {
+                        ManejadorCTD mctd = ManejadorCTD.getInstancia();
+                        ManejadorCTDEjecutable mctde =  ManejadorCTDEjecutable.getInstancia();
+                        ManejadorInstancias manejadorInstancias = ManejadorInstancias.getInstance();
+                        manejadorInstancias.nuevoAnalisis();
+                        ManejadorTablaPila manejadorTablaPila = ManejadorTablaPila.getInstancia();
+                        manejadorTablaPila.nuevoAnalisis();
+                        ManejadorHeap manejadorHeap = ManejadorHeap.getInstancia();
+                        manejadorHeap.nuevoAnalisis();
                         textErrores.setText("");
                         ManejadorCuartetos cuartetos =  ManejadorCuartetos.getInstancia();
+                        manejadorTablaPila.setManejadorCuartetos(cuartetos);
                         cuartetos.nuevoAnalisis();
                         LexicoC lexicoC = new LexicoC(new StringReader(pestañaActual.getTextArea().getText()));
                         SintacticoC sintacticoC = new SintacticoC(lexicoC);
                         sintacticoC.setFrameCTDOA(this);
                         sintacticoC.parse();
                         if (!textErrores.getText().isEmpty()) {
-                            JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
                         } else {
+                            String salidaEjecutable = mctde.print(cuartetos.getCuartetos());
+                            ManejadorEjecutarCodigo manejadorEjecutarCodigo = ManejadorEjecutarCodigo.getInstancia();
+                            manejadorEjecutarCodigo.setSalida(salidaEjecutable);
                             JOptionPane.showMessageDialog(null, "Analisis, realizado con exito. Ve a la pestaña Codigo Tres Direcciones.");
-                            pestañas.get(1).getTextArea().setText(cuartetos.print());
+                            pestañas.get(1).getTextArea().setText(mctd.print(cuartetos.getCuartetos()));
+                            pestañas.get(2).getTextArea().setText(salidaEjecutable);
                         }
+                        manejadorTablaPila.imprimirTabla();
                     } else {
                         JOptionPane.showMessageDialog(null, "No se a seleccionado ningun archivo.", "INFORMACION", JOptionPane.INFORMATION_MESSAGE);
                         JOptionPane.showMessageDialog(null, "Debes de clickear el editor de texto.", "INFORMACION", JOptionPane.INFORMATION_MESSAGE);
                     }
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    
+                    JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
                 }   
             }
         }
     }//GEN-LAST:event_codigoTresDireccionesActionPerformed
+
+    private void ejecutarTresDireccionesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ejecutarTresDireccionesActionPerformed
+        // TODO add your handling code here:
+        ManejadorEjecutarCodigo manejadorEjecutarCodigo = ManejadorEjecutarCodigo.getInstancia();
+        manejadorEjecutarCodigo.escribirCodigoC();
+    }//GEN-LAST:event_ejecutarTresDireccionesActionPerformed
+
+    private void codigoAsemblerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_codigoAsemblerActionPerformed
+        // TODO add your handling code here:
+        ManejadorGenerarAssembler assembler = ManejadorGenerarAssembler.getInstancia();
+        if (assembler.getAssembly() == null) {
+            JOptionPane.showMessageDialog(null, "No se a traducido ningun dato");
+        } else {
+            pestañas.get(3).getTextArea().setText(assembler.getAssembly());
+            JOptionPane.showMessageDialog(null, "Ensamblador creado revisa la pestania correspondiente.");
+        }
+    }//GEN-LAST:event_codigoAsemblerActionPerformed
+
+    private void menuTablaSimbolosMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_menuTablaSimbolosMouseClicked
+        // TODO add your handling code here:
+        this.tablaSimbolos.llenarTabla();
+        this.tablaSimbolos.setVisible(true);
+    }//GEN-LAST:event_menuTablaSimbolosMouseClicked
 
     public void addErrores(String error){
         if (textErrores.getText().isEmpty()) {
@@ -395,9 +452,9 @@ public class FrameCTDOA extends javax.swing.JFrame {
             case "Programa":
                 return ".mlg";
             case "Codigo Tres Direcciones":
-                return ".cpp";
-            case "Optimizacion":
-                return ".cpp";
+                return ".c";
+            case "Codigo Tres Direcciones - Ejecutable":
+                return ".c";
             case "Assembler":
                 return ".asm";
             default:
@@ -422,7 +479,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
         this.jP.setFrameCTDOA(this);
         this.agregarPestaña("Programa", "", "");
         this.agregarPestaña("Codigo Tres Direcciones", "", "");
-        this.agregarPestaña("Optimizacion", "", "");
+        this.agregarPestaña("Codigo Tres Direcciones - Ejecutable", "", "");
         this.agregarPestaña("Assembler", "", "");
     }
     
@@ -443,10 +500,8 @@ public class FrameCTDOA extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem codigoAsembler;
-    private javax.swing.JMenuItem codigoOptimizado;
     private javax.swing.JMenuItem codigoTresDirecciones;
     private javax.swing.JMenuItem ejecutarAssembler;
-    private javax.swing.JMenuItem ejecutarOptimizado;
     private javax.swing.JMenuItem ejecutarTresDirecciones;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
@@ -464,6 +519,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuGuardarComo;
     private javax.swing.JMenuItem menuNuevo;
     private javax.swing.JMenuItem menuSalir;
+    private javax.swing.JMenu menuTablaSimbolos;
     private javax.swing.JTabbedPane panelConPestanias;
     private javax.swing.JTextArea textErrores;
     // End of variables declaration//GEN-END:variables

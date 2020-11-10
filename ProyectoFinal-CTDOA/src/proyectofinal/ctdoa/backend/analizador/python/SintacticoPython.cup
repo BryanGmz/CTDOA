@@ -12,6 +12,8 @@ parser code {:
     public ManejadorSintacticoVB_PY msVB_PY = ManejadorSintacticoVB_PY.getInstacia();
     public ManejadorInstancias mi = ManejadorInstancias.getInstance();
     public ManejadorCuartetos mc = ManejadorCuartetos.getInstancia();
+    public ManejadorBuscarMetodos mbm = ManejadorBuscarMetodos.getInstancia();
+    public ManejadorReturn mr = ManejadorReturn.getInstancia();
     public int contadorLineas;
     public LexicoPython lexer;
     private FrameCTDOA frameCTDOA;
@@ -43,11 +45,10 @@ parser code {:
     @Override
     public void syntax_error(Symbol s){
         try {
-            frameCTDOA.addErrores(
-                    "\nError de Sintaxis: " 
-                    + "\n\tLinea #:\t\t\t\t\t<< " + (s.right + 1 + contadorLineas) + " >>"
-                    + "\n\tColumna #\t\t\t\t\t<< " + (s.left + 1 + contadorLineas) + " >>"
-                    + "\n\tToken NO Reconocido:\t\t\t\t<< " + (s.value) + " >>" );
+            msVB_PY.errorSintax(s.left, s.right, s.value, 
+                "Uf, error sintactico cerca de la linea y columna indicada porfavor revisa que el token\n "
+                        + "\t\tidicado corresponda a la declaracion de instruccion correspondiente. Vuelve a intentarlo."
+            );
         } catch (Exception e) {
             System.out.println("Error " + e.toString());
         }
@@ -58,7 +59,7 @@ parser code {:
 /* Terminales */
 
 terminal            CADENA, CARACTER;
-terminal            MAS, MENOS, POR, DIV, MOD;
+terminal            MAS, MENOS, POR, MOD, DIV;
 terminal            IGUAL;
 terminal            DISTINTO, IGUAL_IGUAL, DIFERENTE, MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL, NOT, AND, OR;
 terminal            PRINT, WHILE, FOR, IN, RANGE, IF, ELSE, ELIF, DEF, RETURN;
@@ -85,7 +86,7 @@ non terminal solicitud_datos, var, for_p;
 non terminal while, estruct, while_n, while_p;
 non terminal for, rango, ii, ie, ee;
 non terminal if, else, else_if, else_if_p;
-non terminal estructura_if;
+non terminal estructura_if, llamada_fp, param, param_p;
 non terminal def, parametros, estructuras, estructuras_p;
 
 
@@ -143,17 +144,24 @@ return ::=
     RETURN return_dato:e
     {: 
         if(e != null) {
-            parser.mc.returnCuarteto((Simbolo) e);
-            RESULT = new Simbolo(Constantes.RETURN_VAR, e);
+            if (parser.mr.compararReturn((Simbolo) e, eleft, eright)){
+                RESULT = new Simbolo(Constantes.RETURN_VAR, e);
+            } else {
+                RESULT = null;
+            }
         } else {
             RESULT = null;
         }    
     :}
+    | error:e
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion return, no se esperaba el token indicado.");:}
 ;
 
 return_dato ::=
     CARACTER:e                              {:RESULT = new Simbolo(Constantes.CHAR_VAR_VB_PY, e);:}
     | operaciones_aritmeticas:e             {:RESULT = e;:}
+    | error:e
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en los datos que se asignaran, no se esperaba el token indicado.");:}
 ;
 
 /******************************* Operaciones Aritmeticas ******************************/
@@ -161,9 +169,9 @@ return_dato ::=
 operaciones_aritmeticas ::= 
     operaciones_aritmeticas:a MAS operaciones_aritmeticas:e             {:RESULT = parser.msVB_PY.realizarOperaciones(a, e, aleft, aright, eleft, eright, 1);:}       
     | operaciones_aritmeticas:a MENOS operaciones_aritmeticas:e         {:RESULT = parser.msVB_PY.realizarOperaciones(a, e, aleft, aright, eleft, eright, 2);:}
+    | operaciones_aritmeticas:a MOD operaciones_aritmeticas:e           {:RESULT = parser.msVB_PY.realizarOperaciones(a, e, aleft, aright, eleft, eright, 5);:}
     | operaciones_aritmeticas:a POR operaciones_aritmeticas:e           {:RESULT = parser.msVB_PY.realizarOperaciones(a, e, aleft, aright, eleft, eright, 3);:}
     | operaciones_aritmeticas:a DIV operaciones_aritmeticas:e           {:RESULT = parser.msVB_PY.realizarOperaciones(a, e, aleft, aright, eleft, eright, 4);:}
-    | operaciones_aritmeticas:a MOD operaciones_aritmeticas:e           {:RESULT = parser.msVB_PY.realizarOperaciones(a, e, aleft, aright, eleft, eright, 5);:}
     | MENOS estruct:e                                                   {:RESULT = parser.msVB_PY.modificarVariables(e, eleft, eright);:}
     | estruct:e                                                         {:RESULT = e;:} 
 ;
@@ -173,6 +181,18 @@ estruct ::=
     | ID:e                                                          {:RESULT = parser.msVB_PY.metodoBuscarID(e.toString(), eleft, eright);:}
     | NUMERO:e                                                      {:RESULT = new Simbolo(Constantes.INT_VAR_VB_PY, e);:}
     | REAL:e                                                        {:RESULT = new Simbolo(Constantes.FLOAT_VAR_VB_PY, e);:}
+    | llamada_fp:a          
+    {:
+        if(a != null) {
+            Tipo tipo = ((Simbolo) a).getTipoFuncion();
+            if(tipo != null && tipo.getNombre().equals("Funcion")) {
+                RESULT = a;
+            } else {
+                parser.msVB_PY.errorSemantico(aleft, aright, "Asignacion", "Error, los metodos no pueden asignarse.");
+                RESULT = null;
+            }
+        }
+    :}
 ;
 
 /***************************** Operaciones Logicas ************************************/
@@ -196,6 +216,15 @@ tipos_comparacion ::=
 
 condicional ::=
     condicional_or:e                                        {:parser.mc.nuevoAnalisisBoolean(); RESULT = e;:}
+    | error:e SALTO                           
+    {:
+        parser.mc.nuevoAnalisisBoolean();  
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
+    | error:e INDENT
+    {:
+        parser.mc.nuevoAnalisisBoolean();  
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
+
 ;
 
 and ::=
@@ -209,6 +238,8 @@ or ::=
 condicional_or ::= 
     condicional_or:a or:c condicional_or:e                      {:RESULT = parser.msVB_PY.comprobacionCondicional(a, e, 2, cleft, cright);:}
     | condicional_and:a                                         {:RESULT = a;:}
+    | error:e
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
 ;
 
 condicional_and ::= 
@@ -227,13 +258,14 @@ concatenacion ::=
     concatenacion:a MAS concatenacion:e                         {:parser.msVB_PY.concatencacion(a, e);:}
     | concatenacion:a COMA concatenacion:e                      {:parser.msVB_PY.concatencacion(a, e);:}
     | CADENA:e                                                  {:parser.mc.imprimir(new Simbolo(null, e)); RESULT = e;:}
-    | estruct:e                                                 {:parser.mc.imprimir((Simbolo) e); RESULT = e;:}
+    | estruct:e                                                 {:parser.mc.imprimirPrintf(0, (Simbolo) e); RESULT = e;:}
+    | error:e                                                   {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la concatenacion de cadenas, de la instruccion PRINT.");:}
 ;
 
 /******************************** Mensaje en Pantalla *********************************/
 
 mensaje_terminal ::=
-    PRINT PARENTESIS_A concatenacion:e PARENTESIS_C           {:RESULT = e;:}
+    PRINT PARENTESIS_A concatenacion:e PARENTESIS_C           {:parser.mc.imprimirNuevaLinea(); RESULT = e;:}
 ;
 
 /***************************** Asignacion de Variables ********************************/
@@ -241,12 +273,10 @@ mensaje_terminal ::=
 asignacion_variables ::=
     ID:a IGUAL asignacion:e          
     {:  
-        if (e != null) {
-            if (((Simbolo) e).getCuarteto() != null) {
-                RESULT = new Simbolo(((Simbolo) e).getTipo(), ((Simbolo) e).getCuarteto().getResultado(), a);
-            } else {
-                RESULT = new Simbolo(((Simbolo) e).getTipo(), ((Simbolo) e), a);
-            }
+        if(e != null) {
+            RESULT = new Simbolo(((Simbolo) e).getTipo(), ((Simbolo) e), a);
+        } else { 
+            RESULT = e;
         }
     :}
 ;
@@ -267,6 +297,10 @@ solicitud_datos ::=
 solicitud_p ::=
     PARENTESIS_A CADENA:e PARENTESIS_C             {:parser.mc.imprimir(new Simbolo(null, e));:}
     | PARENTESIS_A PARENTESIS_C
+    | error:e PARENTESIS_C
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de solicitud de datos, no se esperaba una cadena.");:}
+    | error:e 
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de solicitud de datos, no se esperaba una cadena.");:}
 ;
 
 /************************************* While ******************************************/
@@ -280,7 +314,7 @@ while_p ::=
     {:
         parser.mc.nuevoAnalisisBoolean();
         parser.mc.escribirEtiquetasInicio(false);
-        parser.mc.escribirEtiquetaFin();
+        parser.mc.addEtiquetasEstructuras();
         ((While) w).setA(a);
         RESULT = w;
     :}
@@ -309,6 +343,8 @@ while ::=
 
 var ::=
     ID:e                    {:RESULT = parser.msVB_PY.idPY((String) e, eleft, eright);:}
+    | error:e
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de datos, de la instruccion for, no se esperaba el token indicado.");:}
 ;
 
 for_p ::=
@@ -440,10 +476,16 @@ def ::= //Comprobar si existe un return con los niveles
     def_p:e
         estructuras_p:i
         DEDENT                                  
-        {:parser.mc.finProcedimiento(true); parser.lexer.limpiarStack(); RESULT = parser.msVB_PY.def(((Procedimiento) e).getU(), ((Procedimiento) e).getE(), i, ileft, iright);:}
+        {:  
+            parser.lexer.limpiarStack(); 
+            RESULT = parser.msVB_PY.def(((Procedimiento) e).getU(), ((Procedimiento) e).getE(), i, ileft, iright);
+        :}
     | def_p:e
         estructuras_p:i                         
-        {:parser.mc.finProcedimiento(true); parser.lexer.limpiarStack(); RESULT = parser.msVB_PY.def(((Procedimiento) e).getU(), ((Procedimiento) e).getE(), i, ileft, iright);:}
+        {:
+            parser.lexer.limpiarStack(); 
+            RESULT = parser.msVB_PY.def(((Procedimiento) e).getU(), ((Procedimiento) e).getE(), i, ileft, iright);
+        :}
 ;
 
 space ::=
@@ -452,8 +494,13 @@ space ::=
 ;
 
 parametros ::=
-    ID:e                                    {:RESULT = parser.msVB_PY.parametroPY(e, eleft, eright);:}
-    | ID:e parametros_p:a 
+    parametros_p:e                          {:RESULT = e;:}
+   |                                       {:RESULT = new ArrayList<>();:}
+;
+
+parametros_p ::=
+    ID:e                               {:RESULT = parser.msVB_PY.parametroPY(e, eleft, eright);:}
+    | parametros_p:a COMA ID:e 
     {:
         Simbolo s = parser.msVB_PY.parametroPY(e, eleft, eright);
         List<Simbolo> listaSimbolos = new ArrayList<>();
@@ -469,26 +516,48 @@ parametros ::=
         }
         RESULT = listaSimbolos;
     :}
-    |                                       {:RESULT = new ArrayList<>();:}
+    | error:e                       
+    {: 
+        RESULT = new ArrayList<>();
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de parametros, no se esperaba el token indicado.");
+    :}
 ;
 
-parametros_p ::=
-    COMA ID:e                               {:RESULT = parser.msVB_PY.parametroPY(e, eleft, eright);:}
-    | parametros_p:a COMA ID:e
+llamada_fp ::=
+    ID:a PARENTESIS_A param:e PARENTESIS_C 
+    {:RESULT = parser.mbm.buscarMetodo("PY_", a, e, aleft, aright, 2, true);:}
+;
+
+param ::=
+    operaciones_aritmeticas:e param_p:a                 
     {:
-        Simbolo s = parser.msVB_PY.parametroPY(e, eleft, eright);
-        List<Simbolo> listaSimbolos = new ArrayList<>();
-        if(a != null) {
-            if(a instanceof Simbolo) {
-                listaSimbolos.add((Simbolo) a);
-            } else {
-                listaSimbolos = (List<Simbolo>) a;
-            }
+        List<Simbolo> lista = new ArrayList<>();
+        if (e != null) {
+            lista.add((Simbolo) e);
         }
-        if(s != null) {
-            listaSimbolos.add((Simbolo) s);
+        if(a instanceof Simbolo) {
+            lista.add((Simbolo) a);
+        } else {
+            lista.addAll((List<Simbolo>) a);
         }
-        RESULT = listaSimbolos;
+        RESULT = lista;
+    
+    :} 
+    | error:e     
+    {: 
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros.");
+    :}
+    | operaciones_aritmeticas:e                         {:RESULT = e;:} 
+    | 
+;
+
+param_p ::=
+    COMA operaciones_aritmeticas:e                     {:RESULT = e;:}
+    | param_p:a COMA operaciones_aritmeticas:e         {:RESULT = parser.msVB_PY.lista(a, e);:}
+    | error:e param_p:a
+    {: 
+        RESULT = a;
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros.");
     :}
 ;
 
@@ -499,8 +568,15 @@ estructuras ::=
     | for:e                                             {:RESULT = e;:}
     | estructura_if:e                                   {:RESULT = e;:}
     | return:e space                                    {:RESULT = e;:}
-    | error:e SALTO                                     {:parser.syntax_error((Symbol) e);:} 
-    | error:e DEDENT                                    {:parser.syntax_error((Symbol) e);:} 
+    | llamada_fp space                                            
+    {:
+        Object as = null;
+        parser.mc.addYRemovePuntero(as, false);
+    :}
+    | error:e SALTO                                     
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
+    | error:e DEDENT                                        
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
 ;
 
 estructuras_p ::=
