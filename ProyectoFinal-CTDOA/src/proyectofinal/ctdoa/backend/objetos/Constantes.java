@@ -76,48 +76,48 @@ public class Constantes {
     public final static String ASG_ARREGLO  = "ASG_ARREGLO";
     public final static String GET_ARREGLO  = "GET_ARREGLO";
     public final static String ENCABEZADO_ASM = 
-            ".model small\n"
-            + ".stack\n"
-            + ".data\n";
+            "section .data\n";
     public final static String ENCABEZADO = ""
-            + "\n.code\n"
-            + "Programa proc far\n"
-            + "call main    ; Llamando al main";
+            + "\nsection .text"
+            + "\n\tglobal _start\n"
+            + "_start: \n"
+            + "\tcall main    ; Llamando al main";
     public final static String FIN_PROGRAMA = ""
-            + "\n;Cerrando el Programa\n" +
-            "mov ah,4ch\n" +
-            "int 21h\n";
-    public final static String FIN = ""
-            + "\nPrograma endp"
-            + "\nend Programa";
+            + "\n\t;Cerrando el Programa\n" +
+            "\tmov ah,4ch\n" +
+            "\tint 21h\n";
+    public final static String FIN = "";
+//            + "\nPrograma endp"
+//            + "\nend Programa";
     public final static String CODE = ".code";
     public final static String END = "end";
     public final static String ENDP = "endp";
     public final static String EXIT = ".exit";
-    public final static String MOV = "mov";
-    public final static String CALL_ASM = "call";
-    public final static String ADD = "add";
-    public final static String SUB = "sub";
-    public final static String MUL = "mul";
-    public final static String DIV_ASM = "div";
+    public final static String MOV = "\tmov";
+    public final static String CALL_ASM = "\tcall";
+    public final static String ADD = "\tadd";
+    public final static String SUB = "\tsub";
+    public final static String MUL = "\tmul";
+    public final static String DIV_ASM = "\tdiv";
     public final static String SEG_DATA = "SEG @data";
     public final static String OFFSET = "offset";
     public final static String TYPEDEF = "typedef";
-    public final static String LEA = "lea";
-    public final static String INRRUPCION = "int 21h";
+    public final static String LEA = "\tlea";
+    public final static String INRRUPCION = "\tint 21h";
     public final static String PROC = "proc";
     public final static String RET = "ret";
     public final static String DB = "db"; //Int o Char
     public final static String DW = "dw"; //Float 
     public final static String EAX = "eax";
+    public final static String EBX = "ebx";
     public final static String EDX = "edx";
-    public final static String JMP = "jmp";
-    public final static String CMP = "cmp";
-    public final static String JE = "je";
-    public final static String JNE = "jne";
-    public final static String JG = "jg";
-    public final static String JGE = "jge";
-    public final static String JL = "jl";
-    public final static String JLE = "jle";
+    public final static String JMP = "\tjmp";
+    public final static String CMP = "\tcmp";
+    public final static String JE = "\tje";
+    public final static String JNE = "\tjne";
+    public final static String JG = "\tjg";
+    public final static String JGE = "\tjge";
+    public final static String JL = "\tjl";
+    public final static String JLE = "\tjle";
     
 }

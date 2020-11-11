@@ -18,13 +18,13 @@ public class ManejadorAssemblerMensajes {
     private static ManejadorAssemblerMensajes manejadorAssemblerMensajes;
     private int contador;
     private List<String> listaData;
-    private final String MSG = "msg_";
+    private final String MSG = "\tmsg_";
     private final String DATA = 
-            "\nmov ax, seg @data  ;"
-            + "\nmov ds, ax     ;"
-            + "\nmov ah, 09h    ;"
-            + "\nlea dx, "; 
-    private final String INTERRUPCION = "int 21h    ;";
+            "\n\tmov ax, seg @data  ;"
+            + "\n\tmov ds, ax     ;"
+            + "\n\tmov ah, 09h    ;"
+            + "\n\tlea dx, "; 
+    private final String INTERRUPCION = "\tint 21h    ;";
             
     private ManejadorAssemblerMensajes(){}
     
@@ -42,22 +42,29 @@ public class ManejadorAssemblerMensajes {
         contador = 0;
     }
     
+    public String getMsg(){
+        String retornar = "";
+        for (String string : listaData) {
+            retornar += string + "\n";
+        } return retornar;
+    }
+    
     // Me regresa el mensaje
     
     public String addData(String msg){
         //msg_1 
         String tituloMensaje = MSG + contador;
         contador++;
-        String salida = tituloMensaje + " " + Constantes.DB + " " +msg + ", 0 ; Inicializando la data del mensaje";
+        String salida = tituloMensaje + " " + Constantes.DB + " " +msg + ", 0       ; Inicializando la data del mensaje";
         listaData.add(salida);
         return DATA + tituloMensaje + "   ;\n"+ INTERRUPCION + nuevaLinea();
     }
     
     public String nuevaLinea(){
-        return "\nmov dx, CRLF      ;"
-                + "\npush ax        ; Reserva AX"
-                + "\nmov ah, 09h    ; Funcion 09h para imprimir"
-                + "\nint 21h        ; Interrumpe"
-                + "\npop ax         ; Libera espacio";
+        return "\n\tmov dx, CRLF      ;"
+                + "\n\tpush ax        ; Reserva AX"
+                + "\n\tmov ah, 09h    ; Funcion 09h para imprimir"
+                + "\n\tint 21h        ; Interrumpe"
+                + "\n\tpop ax         ; Libera espacio";
     }
 }

@@ -43,9 +43,11 @@ public class ManejadorGenerarAssembler {
         mam.nuevoAnalisis();
         mapd.nuevoAnalisis();
         assembler += Constantes.ENCABEZADO_ASM;
-        assembler += mat.dataTemp(listaTemp);
-        assembler += Constantes.ENCABEZADO;
-        assembler += Constantes.FIN_PROGRAMA;
+        System.out.println("E " + Constantes.ENCABEZADO_ASM);
+        String normalData = "";
+        normalData += mat.dataTemp(listaTemp);
+        normalData += Constantes.ENCABEZADO;
+        normalData += Constantes.FIN_PROGRAMA;
         //Area Programa Principal
         for (Cuarteto cuarteto : lista) {
             String salida = "";
@@ -62,7 +64,7 @@ public class ManejadorGenerarAssembler {
                         cuarteto.getOperador().equalsIgnoreCase(Constantes.MAYOR) ||
                         cuarteto.getOperador().equals(Constantes.MENOR_IGUAL) ||
                         cuarteto.getOperador().equalsIgnoreCase(Constantes.MENOR)){
-                        assembler += maoc.operacionComparacion(cuarteto);
+                        salida += maoc.operacionComparacion(cuarteto);
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.GOTO)){
                     salida += maoi.gotoEtiqueta(cuarteto);
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.ETIQUETA)){
@@ -103,8 +105,10 @@ public class ManejadorGenerarAssembler {
             } else {
                 salida += maoi.asignacion(cuarteto);
             }
-            assembler += salida;
+            normalData += salida;
         } 
+        assembler += mam.getMsg();
+        assembler += normalData;
         assembler += Constantes.FIN;
         assembly = assembler;
     }

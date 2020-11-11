@@ -25,11 +25,15 @@ public class ManejadorAssemblerOperacionesComparacion {
      }
      
      public String operacionComparacion(Cuarteto comparacion){
+         ManejadorAssembleOtrasInstrucciones maoi = ManejadorAssembleOtrasInstrucciones.getInstancia();
          String etiquetaGoto = comparacion.getResultado().getId().replaceAll("goto", "");
          /*
         // MOV eax, Op1
         // CMP eax, Op2
          */
+         if (etiquetaGoto.equals("etqFinReturn")) {
+             etiquetaGoto = etiquetaGoto + "_" + maoi.getContadorEtiquetas();
+         }
          String regresar = ""
                  + "\n" + Constantes.MOV + " " + Constantes.EAX  + ", " + comparacion.getOperando1() + "        ; Asignando el valor del comparando 1 a un registro";
          regresar += ""

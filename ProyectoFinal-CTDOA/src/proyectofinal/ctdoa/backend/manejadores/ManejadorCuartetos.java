@@ -956,7 +956,7 @@ public class ManejadorCuartetos {
     }
     
     public void imprimirDeclaracionArreglo(Simbolo arreglo, Tipo tipo, Object valor){
-        cuartetos.add(new Cuarteto(Constantes.ARREGLO, new Simbolo(tipo, null, "[" + valor + "]"), null, arreglo));
+        cuartetos.add(new Cuarteto(Constantes.ARREGLO, new Simbolo(tipo, null, "" + valor + ""), null, arreglo));
     }
     
     public Cuarteto asignacionArreglo(Simbolo arreglo, Tipo tipo, Object valor, Simbolo val) throws CloneNotSupportedException{
@@ -964,14 +964,14 @@ public class ManejadorCuartetos {
         Cuarteto aux = cuartetoOperacionAritmetica(1, (Simbolo) valor, new Simbolo(Constantes.INT_VAR_PJ, arreglo.getEspacionMemoriaHeap()), null, Constantes.INT_VAR_PJ);
         if (val.getCuarteto() != null) {
             try {
-                 cuarteto = new Cuarteto(Constantes.ASG_ARREGLO, new Simbolo(tipo, null, "[" + aux.getResultado().getId() + "]"), val.getCuarteto().getResultado().clone(), arreglo);
+                 cuarteto = new Cuarteto(Constantes.ASG_ARREGLO, new Simbolo(tipo, null, "" + aux.getResultado().getId() + ""), val.getCuarteto().getResultado().clone(), arreglo);
                  cuartetos.add(cuarteto);
             } catch (CloneNotSupportedException ex) {
                  Logger.getLogger(ManejadorCuartetos.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else {
              try {
-                 cuarteto = new Cuarteto(Constantes.ASG_ARREGLO, new Simbolo(tipo, null, "[" + aux.getResultado().getId() + "]"), asignar(val.clone()), arreglo);
+                 cuarteto = new Cuarteto(Constantes.ASG_ARREGLO, new Simbolo(tipo, null, "" + aux.getResultado().getId() + ""), asignar(val.clone()), arreglo);
                  cuartetos.add(cuarteto);
              } catch (CloneNotSupportedException ex) {
                  Logger.getLogger(ManejadorCuartetos.class.getName()).log(Level.SEVERE, null, ex);
@@ -989,7 +989,7 @@ public class ManejadorCuartetos {
         //temp con el tamanio del arreglo
         //arreglo = 
         Cuarteto cuarteto = new Cuarteto(Constantes.GET_ARREGLO, 
-                new Simbolo(tipo, null, "[" + aux.getResultado().getId() + "]"), 
+                new Simbolo(tipo, null, "" + aux.getResultado().getId() + ""), 
                 null, 
                 destino);
         cuartetos.add(cuarteto);

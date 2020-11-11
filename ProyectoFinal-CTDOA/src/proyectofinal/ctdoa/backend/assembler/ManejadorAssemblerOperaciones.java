@@ -53,9 +53,9 @@ public class ManejadorAssemblerOperaciones {
             }
         } 
         if (mod) {
-            operacion +=  "\n" + Constantes.MOV + " " + cuartetoOperacion.getResultado().getId() + ", " + Constantes.EDX + "      ; Guardando el resultado de la operacion en la temp";
+            operacion +=  "\n" + Constantes.MOV + " [" + cuartetoOperacion.getResultado().getId() + "], " + Constantes.EDX + "      ; Guardando el resultado de la operacion en la temp";
         } else {
-            operacion +=  "\n" + Constantes.MOV + " " + cuartetoOperacion.getResultado().getId() + ", " + Constantes.EAX + "      ; Guardando el resultado de la operacion en la temp";
+            operacion +=  "\n" + Constantes.MOV + " [" + cuartetoOperacion.getResultado().getId() + "], " + Constantes.EAX + "      ; Guardando el resultado de la operacion en la temp";
         }
         return operacion;
     }
