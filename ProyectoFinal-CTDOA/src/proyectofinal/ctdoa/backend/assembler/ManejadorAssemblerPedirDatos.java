@@ -15,7 +15,9 @@ import proyectofinal.ctdoa.backend.objetos.Cuarteto;
 public class ManejadorAssemblerPedirDatos {
     
     private static ManejadorAssemblerPedirDatos assemblerPedirDatos;
-    private int contador;
+    private static ManejadorAssemblerTemporales assemblerTemporales = ManejadorAssemblerTemporales.getInstancia();
+    private static ManejadorAssembleOtrasInstrucciones assembleOtrasInstrucciones = ManejadorAssembleOtrasInstrucciones.getInstancia();
+    private static boolean isScanf;
     
     private ManejadorAssemblerPedirDatos(){}
     
@@ -25,56 +27,60 @@ public class ManejadorAssemblerPedirDatos {
         } return assemblerPedirDatos;
     }
     
-    public void nuevoAnalisis(){
-        contador = 0;
+    public void nuevoAnalisis() {}
+    
+    public boolean isScanf(){
+        return isScanf;
     }
     
+    public void useScanf(){
+        isScanf = false;
+    }
+    
+    
     public String pedirDatos(Cuarteto addDato){
+        isScanf = true;
+        if (addDato == null) {
+            return "";
+        }
+        String analizar = addDato.getOperando1().getValor().toString().replaceAll(" &", "");
+        analizar = analizar.replaceAll("&", "");
+        analizar = analizar.replaceAll(",", "");
+        String regresar = "";
+        if (!assembleOtrasInstrucciones.getSubRutinaActual().equalsIgnoreCase("main")) {
+            regresar += "\n\tsub\trsp,\t8\n";
+        }
+        regresar += "\n\t; Call Scanf";
+        switch (analizar) {
+            case "\" %c\"":
+                regresar += "\n" + Constantes.LEA + "\tesi,\t" + "[" + addDato.getOperando1().getId()  + "]";
+                regresar += "\n" + Constantes.LEA + "\t" + Constantes.RDI + ",\t" + "[rel formatCharScanf" + "]";
+                break;
+            case "\"%d\"":
+                regresar += "\n" + Constantes.LEA + "\tesi,\t" + "[" + addDato.getOperando1().getId()  + "]";
+                regresar += "\n" + Constantes.LEA + "\t" + Constantes.RDI + ",\t" + "[rel formatIntScanf" + "]";
+                break;
+            case "\"%f\"":
+            case "\" %f\"":
+            case "\" %f \"":
+                regresar += "\n" + Constantes.MOV + "\trsi,\t" + addDato.getOperando1().getId();
+                regresar += "\n" + Constantes.MOV + "\t" + Constantes.RDI + ",\tformatFloatScanf";
+                break;
+            default:
+                throw new AssertionError(); 
+        }
+        regresar += "\n\txor\t" + Constantes.RAX + ",\t" + Constantes.RAX;
+        regresar += "\n\t" + Constantes.CALL + "\tscanf";
         /*
-        pedir: 
-        mov ah, 01h
-        int 21h
-        cmp al, 0dh
-        jne salir
-        jmp continuar
-        continuar: 
-        sub al, 30h
-        mov cl, al
-        mov dl, cl
-        mov el, 10
-        mul auxIng
-        mov bl, dl
-        mul auxIng
-        add al, bl
-        mov auxNum, al  
-        jmp pedir
-        salir:
-        mov eax, auxNum
-        mov resultado, eax
+            mov	rax, [temp105]
+            mov	[aux], x
         */
-        String regresar = "\npedir" + contador + ":" 
-                + "\n" + Constantes.MOV + " ah, 01h     ; Capturando los datos"
-                + "\n" + Constantes.INRRUPCION + "      ; Inrrupcion"
-                + "\n" + Constantes.CMP + " al, 0dh     ; Comparando si es enter"
-                + "\n" + Constantes.JNE + " salir" + contador
-                + "\n" + Constantes.JMP + " continuar" + contador
-                + "\ncontinuar" + contador + ":"
-                + "\n" + Constantes.SUB + " al, 30h"
-                + "\n" + Constantes.MOV + " cl, al"
-                + "\n" + Constantes.MOV + " dl, cl"
-                + "\n" + Constantes.MOV + " el, 10"
-                + "\n" + Constantes.MUL + " auxIng"
-                + "\n" + Constantes.MOV + " al, auxNum"
-                + "\n" + Constantes.MOV + " aux, al"
-                + "\n" + Constantes.JMP + " pedir" + contador
-                + "\nsalir" + contador  + ": "
-                + "\n" + Constantes.MOV + " " + Constantes.EAX + ", auxNum"
-                + "\n" + Constantes.MOV + " " + addDato.getOperando1().getId() + ", auxNum"
-                + "\n" + Constantes.MOV + " auxNum, 0"
-                + "\n" + Constantes.MOV + " auxIng, 0"
-                ;
-        contador++;        
+        if (!assembleOtrasInstrucciones.getSubRutinaActual().equalsIgnoreCase("main")) {
+            regresar += "\n\n\tadd\trsp,\t8";
+        }
+        assemblerTemporales.addTempScan(addDato.getOperando1().getId() + "\td");
+        //regresar += "\n\n" + Constantes.MOV + "\t" + Constantes.RAX + ",\t" + "[" + addDato.getOperando1().getId() + "]";
+        //regresar += "\n" + Constantes.MOV + "\t" + "[aux]" + ",\t" + Constantes.RAX;
         return regresar;
-        
     }
 }

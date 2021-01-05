@@ -101,13 +101,13 @@ public class ManejadorCuartetos {
         declararVariableTemp(null, destino);
         contadorVariables++;
         switch (caso) {
-            case 1:
+            case Constantes.INT:
                 cuarteto = new Cuarteto(Constantes.SCANF, new Simbolo(null, "\"%d\", &", ("" + asignar(destino)) ), null, null);
                 break;
-            case 2:
+            case Constantes.CHAR:
                 cuarteto = new Cuarteto(Constantes.SCANF, new Simbolo(null, "\" %c\", &", ("" + asignar(destino))), null, null);
                 break;
-            case 3:
+            case Constantes.FLOAT:
                 cuarteto = new Cuarteto(Constantes.SCANF, new Simbolo(null, "\"%f\", &", ("" + asignar(destino))), null, null);
                 break;
             default:
@@ -122,7 +122,7 @@ public class ManejadorCuartetos {
                     Cuarteto aux =  addApuntador(1);
                     //tempn+1 = stack[tempn]
                     aux = addPunteroFuncin(aux);
-                    //tempn+2 = tempn+1 + apuntadorHeap
+                    //tempn+2 = tempn + 1 + apuntadorHeap
                     aux = cuartetoOperacionAritmetica(1, aux.getResultado(), 
                             new Simbolo(Constantes.INT_VAR_PJ, e.getEspacionMemoriaHeap()), null, Constantes.INT_VAR_PJ);
                     cuartetos.add(new Cuarteto(Constantes.ASG, destino, null,
@@ -138,20 +138,38 @@ public class ManejadorCuartetos {
         }
     }
     
-    public void imprimirPrintf(int caso, Simbolo e){
+    public void imprimirPrintf(int caso, Simbolo e, int tipo){
         Cuarteto cuarteto;
+        boolean bandera = false;
         if (caso == 0) {
-            caso = e.getTipo().getSymbol();
+            if (tipo == -1) {
+                caso = e.getTipo().getSymbol();
+            } else {
+                bandera = true;
+                caso = tipo;
+            }
         }
         switch (caso) {
             case Constantes.INT:
-                cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %d \", ", ("" + asignar(e))), null, null);
+                if (bandera) {
+                    cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %d \", ", asignar(e).toString()), new Simbolo(null, Constantes.FLOAT), null);
+                } else {
+                    cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %d \", ", asignar(e).toString()), null, null);
+                }
                 break;
             case Constantes.CHAR:
-                cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %f \", ", ("" + asignar(e))), null, null);
+                if (bandera) {
+                     cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %c \", ", asignar(e).toString()), new Simbolo(null, Constantes.FLOAT), null);
+                } else {
+                    cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %c \", ", asignar(e).toString()), null, null);
+                }
                 break;
             case Constantes.FLOAT:
-                cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %f \", ", ("" + asignar(e))), null, null);
+                if (bandera) {
+                    cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %f \", ", asignar(e).toString()), new Simbolo(null, Constantes.FLOAT), null);
+                } else {                   
+                    cuarteto = new Cuarteto(Constantes.PRINTF, new Simbolo(null, "\" %f \", ", asignar(e).toString()), null, null);
+                }
                 break;
             default:
                 throw new AssertionError();
@@ -582,8 +600,16 @@ public class ManejadorCuartetos {
                 cuarteto = auxCuartetos(op1, op2, Constantes.DIV, destino, cuarteto);
                 break;
             case 5:
+                /*
+                    int a = 5, b = 6;
+                    int c = a/b;
+                    float mod = b*c;
+                    mod = a-mod;
+                */
+                Cuarteto cuartetoMod = cuartetoOperacionAritmetica(4, op1, op2, null, Constantes.INT_VAR_PJ);
+                cuartetoMod = cuartetoOperacionAritmetica(3, cuartetoMod.getResultado(), op2, null, Constantes.FLOAT_VAR_PJ);
                 destino.setTipo(Constantes.FLOAT_VAR_PJ);
-                cuarteto = auxCuartetos(op1, op2, Constantes.MOD, destino, cuarteto);
+                cuarteto = auxCuartetos(op1, cuartetoMod.getResultado(), Constantes.MENOS, destino, cuarteto);
                 break;
             default:
                 throw new AssertionError();
@@ -616,7 +642,7 @@ public class ManejadorCuartetos {
                 cuarteto =  new Cuarteto(Constantes.DIFERENTE, etiquetaSwitch.getCuarteto().getResultado(), asignar(comparacion), new Simbolo(null, null, "goto " +idEtiquetaSiguiente));
             } else {
                 cuarteto =  new Cuarteto(Constantes.DIFERENTE, asignar(etiquetaSwitch), asignar(comparacion), new Simbolo(null, null, "goto " +idEtiquetaSiguiente));
-            }   
+            }
         }
         cuartetos.add(cuarteto);
     }
@@ -626,14 +652,14 @@ public class ManejadorCuartetos {
             Cuarteto cuarteto;
             if (comparacion.getCuarteto() != null) {
                 if (comparacion.getTipo() != null) {
-                    imprimirPrintf(comparacion.getCuarteto().getResultado().getTipo().getSymbol(), comparacion.getCuarteto().getResultado());
+                    imprimirPrintf(comparacion.getCuarteto().getResultado().getTipo().getSymbol(), comparacion.getCuarteto().getResultado(), 1);
                 } else {
                     cuarteto =  new Cuarteto(Constantes.IMPRIMIR_CONSOLA, comparacion.getCuarteto().getResultado(), null, null);
                     cuartetos.add(cuarteto);
                 }
             } else {
                 if (comparacion.getTipo() != null) {
-                    imprimirPrintf(comparacion.getTipo().getSymbol(), comparacion);
+                    imprimirPrintf(comparacion.getTipo().getSymbol(), comparacion, 1);
                 } else {
                     cuarteto = new Cuarteto(Constantes.IMPRIMIR_CONSOLA, asignar(comparacion), null, null);
                     cuartetos.add(cuarteto);
@@ -679,7 +705,6 @@ public class ManejadorCuartetos {
         escribirEtiquetasInicio(false);
         escribirEtiqueta();
         gotoEscribirEtiqueta(etiquetaInicio);
-        System.out.println("Lista " + listaEtiquetas.size());
         while (!listaEtiquetas.isEmpty()) {
             escribirNuevaEtiqueta(listaEtiquetas.remove(0));
         }
@@ -954,10 +979,7 @@ public class ManejadorCuartetos {
             Logger.getLogger(ManejadorCuartetos.class.getName()).log(Level.SEVERE, null, ex);
         } return null;
     }
-    
-    public void imprimirDeclaracionArreglo(Simbolo arreglo, Tipo tipo, Object valor){
-        cuartetos.add(new Cuarteto(Constantes.ARREGLO, new Simbolo(tipo, null, "" + valor + ""), null, arreglo));
-    }
+
     
     public Cuarteto asignacionArreglo(Simbolo arreglo, Tipo tipo, Object valor, Simbolo val) throws CloneNotSupportedException{
         Cuarteto cuarteto = null;
@@ -1017,7 +1039,7 @@ public class ManejadorCuartetos {
             salida += cuarteto.getOperando1().getId();
         } else if (cuarteto.getOperando1().getValor() != null) {
             salida += cuarteto.getOperando1().getValor().toString();
-        } 
+        }
         if (cuarteto.getOperando2() != null) {
             salida += " " + cuarteto.getOperador() + " ";
             if (cuarteto.getOperando2().getId() != null) {
@@ -1148,7 +1170,7 @@ public class ManejadorCuartetos {
     }
     
     public Cuarteto addCuartetoHeap(Simbolo s, Simbolo destino) throws CloneNotSupportedException{
-         Cuarteto cuarteto = null;
+        Cuarteto cuarteto = null;
         if (s.getCuarteto() == null) {
             try {
                 cuarteto = new Cuarteto(null, asignar(s.clone()), null, new Simbolo(null, null, "heap[" + addEspacioHeap(destino.getEspacionMemoria()).getResultado().getId() + "]"));

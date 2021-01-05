@@ -75,7 +75,7 @@ terminal String     ERROR;
 
 non terminal inicio, main;
 non terminal estructura_principal, txt, dato_const;
-non terminal cod_vb, cod_py, cod_java;
+non terminal cod_vb, cod_py, cod_java, ppa;
 non terminal constante, cv_p, dato, texto_cadena;
 non terminal tipo_dato, switch_p, do_while_p;
 non terminal librerias, librerias_p, getch;
@@ -128,11 +128,17 @@ inicio ::=
         parser.mc.finProcedimiento(false, false);
     :}
     | error:e
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion del programa, no se esperaba el token indicado para la contruccion de un nuevo programa.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion del programa. Se espera la estructura: << %%VB (Codigo Visual Basic) %%PY (Codigo Python) %%JAVA (Codigo Java) %%PROGRAMA (Codigo Programa)>>, vuelve a intentarlo.");:}
 ;
 
 main ::=
     VOID MAIN PARENTESIS_A PARENTESIS_C CORCHETE_A      
+;
+
+ppa ::=
+    PARENTESIS_A
+    | error:x
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico la estructura del programa. Se esperaba el token: << ( >>");:}
 ;
 
 /****************************** Estructura Principal **************************************/
@@ -148,7 +154,7 @@ estructura_principal ::=
 
 cod_vb ::=
     COD_VB:e 
-    {:  
+    {:        
         try {
             parser.msJP.setContadorLineas(0);
             LexicoVisualBasic lexicoVisualBasic = new LexicoVisualBasic(new StringReader(e.toString().replaceAll("%%VB", "")));
@@ -164,6 +170,26 @@ cod_vb ::=
             JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Visual Basic.", "ERROR", JOptionPane.ERROR_MESSAGE);
         }
     :}
+    | error:x COD_VB:e 
+    {:  
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la declaracion del programa. Se esperaba el token: << %%VB >>, no el token indicado.");
+        try {
+            parser.msJP.setContadorLineas(0);
+            LexicoVisualBasic lexicoVisualBasic = new LexicoVisualBasic(new StringReader(e.toString().replaceAll("%%VB", "")));
+            lexicoVisualBasic.setFrameCTDOA(parser.frameCTDOA);
+            SintacticoVisualBasic sintacticoVisualBasic = new SintacticoVisualBasic(lexicoVisualBasic);
+            sintacticoVisualBasic.setFrameCTDOA(parser.frameCTDOA);
+            sintacticoVisualBasic.parse();
+            parser.msJP.setContadorLineas(0);
+        } catch (Exception ex) {    
+            parser.msJP.setContadorLineas(0);
+            //ex.printStackTrace();
+            System.out.println(ex.toString());
+            JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Visual Basic.", "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+    :}
+    | error:x
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la declaracion del programa. Se esperaba el token: << %%VB >>, no el token indicado.");:}
 ;
 
 cod_py ::=
@@ -184,6 +210,26 @@ cod_py ::=
         }
         parser.msJP.setContadorLineas(0);
     :}
+    | error:x COD_PY:e 
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la declaracion del programa. Se esperaba el token: << %%PY >>, no el token indicado.");
+        try {
+            LexicoPython lexicoPython = new LexicoPython(new StringReader(e.toString().replaceAll("%%PY", "")));
+            lexicoPython.setFrameCTDOA(parser.frameCTDOA); 
+            SintacticoPython sintacticoPython = new SintacticoPython(lexicoPython);
+            sintacticoPython.setContadorLineas(eright);
+            sintacticoPython.setFrameCTDOA(parser.frameCTDOA);
+            sintacticoPython.setContadorLineas(eright);
+            sintacticoPython.parse();
+        } catch( Exception ex) {
+            //ex.printStackTrace();
+            System.out.println(ex.toString());
+            JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Python.", "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+        parser.msJP.setContadorLineas(0);
+    :}
+    | error:x
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la declaracion del programa. Se esperaba el token: << %%PY >>, no el token indicado.");:}
 ;
 
 cod_java ::=
@@ -208,18 +254,66 @@ cod_java ::=
         ManejadorHeap mh = ManejadorHeap.getInstancia();
         mh.setPrincipal(false);
     :}
+    | error:x COD_JAVA:e  
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la declaracion del programa. Se esperaba el token: << %%JAVA >>, no el token indicado.");
+        try {
+            parser.msJP.setContadorLineas(0);
+            LexicoJava lj = new LexicoJava(new StringReader((e.toString().replaceAll("%%JAVA", ""))));
+            lj.setFrameCTDOA(parser.frameCTDOA);
+            SintacticoJava sintacticoj = new SintacticoJava(lj);
+            sintacticoj.setContadorLineas(eright);
+            sintacticoj.setFrameCTDOA(parser.frameCTDOA);
+            sintacticoj.parse();
+        } catch( Exception ex) { 
+            //ex.printStackTrace();
+            parser.msJP.setContadorLineas(0);
+            System.out.println(ex.toString());
+            JOptionPane.showMessageDialog(null, "Errores, analizando el codigo de Java.", "ERROR", JOptionPane.ERROR_MESSAGE);
+        }
+        parser.msJP.nuevoAnalisis();
+        parser.msJP.setContadorLineas(0);
+        ManejadorHeap mh = ManejadorHeap.getInstancia();
+        mh.setPrincipal(false);
+    :}
+    | error:x
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la declaracion del programa. Se esperaba el token: << %%JAVA >>, no el token indicado.");:}
 ;
 
 /********************************** Constantes ********************************************/
 
 constante ::=
-    CONST tipo_dato:e ID:a IGUAL dato_const:i PUNTO_COMA        {:RESULT = parser.manejadorConstantes.declaracionConstante(new Simbolo((Tipo) e, i, a), eleft, eright);:}
+    CONST tipo_dato:e ID:a IGUAL dato_const:i PUNTO_COMA                {:RESULT = parser.manejadorConstantes.declaracionConstante(new Simbolo((Tipo) e, i, a), eleft, eright);:}
+    | CONST tipo_dato:e ID:a IGUAL dato_const:i error:x PUNTO_COMA        
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion declaracion de constantes. Se esperaba el token: << ; >>, no el token indicado.");
+        RESULT = parser.manejadorConstantes.declaracionConstante(new Simbolo((Tipo) e, i, a), eleft, eright);
+    :}
+    | CONST tipo_dato:e ID:a IGUAL error:x PUNTO_COMA        
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion declaracion de constantes. Se esperaba el token: << Entero | Decimal | Operacion Aritmetica >>, no el token indicado.");:}
+    | CONST tipo_dato:e ID:a IGUAL dato_const:i error:x                   
+    {:  
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion declaracion de constantes. Se esperaba el token: << ; >>, no el token indicado.");
+        RESULT = parser.manejadorConstantes.declaracionConstante(new Simbolo((Tipo) e, i, a), eleft, eright);
+    :}
+    | error:x CONST tipo_dato:e ID:a IGUAL dato_const:i PUNTO_COMA        
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones de declaracion de constantes. Se esperaba la declaracion de una constante.");
+        RESULT = parser.manejadorConstantes.declaracionConstante(new Simbolo((Tipo) e, i, a), eleft, eright);
+    :}
     | declaracion_variables_g:e PUNTO_COMA                      {:RESULT = e;:}
-    | COMENTARIO
+    | error:x COMENTARIO
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones. Se a recuperado jaste el token: << Comentario >>.");:}
     | tipo_dato:a arreglo_const:e PUNTO_COMA                    {:RESULT = parser.msJP.declararArreglo(e, eleft, eright, (Tipo) a);:}
-    | instancia_constructor PUNTO_COMA                          {:/* Ignore */:}
+    | error:x instancia_constructor PUNTO_COMA                            
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion declaracion de instancias. Se esperaba el token: << JAVA >>, no el token indicado.");:}
+    | instancia_constructor error:x                                       
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion declaracion de instancias. Se esperaba el token: << ; >>, no el token indicado.");:}
+    | instancia_constructor error:x PUNTO_COMA                            
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion declaracion de instancias. Se esperaba el token: << ; >>, no el token indicado.");:}
+    | instancia_constructor PUNTO_COMA                                  {:/* Ignore */:}
     | error:e PUNTO_COMA                                        
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de la constante o variable, no se esperaba el token indicado en el area de variables y constantes.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de la constante o variable, se esperaba: << COMENTARIO || VARIABLE || CONSTANTES >> en el area de variables y constantes.");:}
 ;
 
 cv_p ::=
@@ -231,7 +325,7 @@ dato ::=
     CARACTER:e                                          {:RESULT = new Simbolo(Constantes.CHAR_VAR_PJ, e);:}
     | operaciones_aritmeticas:e                         {:RESULT = e;:}
     | error:e
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en los datos que se asignaran, no se esperaba el token indicado.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en los datos que se asignaran. Se esperaba token: << ID | Operacion Aritmetica | Entero | Decimal >>");:}
 ;
 
 dato_const ::=
@@ -248,7 +342,7 @@ tipo_dato ::=
     | error:e                   
     {:  
         RESULT = Constantes.INT_VAR_PJ;
-        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en el tipo de dato de una variable, no se esperaba el token indicado.");
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion tipo de dato de una variable. Se esperaba el token: << int | char | float >>");
     :}
 ;
 
@@ -284,6 +378,8 @@ est_const ::=
     | ID:e                                                          {:RESULT = parser.manejadorConstantes.isConstante(e.toString(), eleft, eright);:}
     | NUMERO:e                                                      {:RESULT = new Simbolo(Constantes.INT_VAR_VB_PY, e);:}
     | REAL:e                                                        {:RESULT = new Simbolo(Constantes.FLOAT_VAR_VB_PY, e);:}
+    | error:x est_const:e
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operacion aritmetica o valores. Se esperaba el token: << ID | Entero | Decimal >>, no el token indicado."); RESULT = e;:}
 ;
 
 operaciones_aritmeticas ::= 
@@ -313,11 +409,19 @@ operaciones_logicas ::=
     | tipos_comparacion:a MENOR_IGUAL:c tipos_comparacion:e                     {:RESULT = parser.msJP.comprobarOperacionesLogicas(a, e, 4, cleft, cright);:}
     | tipos_comparacion:a MAYOR:c tipos_comparacion:e                           {:RESULT = parser.msJP.comprobarOperacionesLogicas(a, e, 5, cleft, cright);:}
     | tipos_comparacion:a MAYOR_IGUAL:c tipos_comparacion:e                     {:RESULT = parser.msJP.comprobarOperacionesLogicas(a, e, 6, cleft, cright);:}
+    | tipos_comparacion error:x tipos_comparacion                     
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operaciones de comaparacion. Se esperaba el token: << < | > | <= | >= | != >>, no el token indicado.");:}
 ;
 
 tipos_comparacion ::=
     operaciones_aritmeticas:a               {:RESULT = a;:}
     | CARACTER:a                            {:RESULT = new Simbolo(Constantes.CHAR_VAR_PJ, a);:}
+    | error:x operaciones_aritmeticas:a               
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operacion de comparacion. Se esperaba el token: << ID | Entero | Decimal | Operacion Aritmetica | Caracter >>, no el token indicado."); RESULT = a;:}
+    | error:x CARACTER:a                            
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operacion de comparacion. Se esperaba el token: << ID | Entero | Decimal | Operacion Aritmetica | Caracter >>, no el token indicado."); RESULT = new Simbolo(Constantes.CHAR_VAR_PJ, a);:}
+    | error:x
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operacion de comparacion. Se esperaba el token: << ID | Entero | Decimal | Operacion Aritmetica | Caracter >>, no el token indicado.");:}
 ;
 
 /********************************** Condicionales *************************************/
@@ -327,7 +431,7 @@ condicional ::=
     | error:e CORCHETE_C
     {:
         parser.mc.nuevoAnalisisBoolean();  
-        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional. Se esperaba la estructura: << Op1 (&& , ||) Op2 >>");
     :}
 ;
 
@@ -343,7 +447,7 @@ condicional_or ::=
     condicional_or:a or:c condicional_or:e                      {:RESULT = parser.msJP.comprobacionCondicional(a, e, 2, cleft, cright);:}
     | condicional_and:a                                         {:RESULT = a;:}
     | error:e
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional. Se esperaba la estructura: << Op1 (&&, ||) Op2 >>");:}
 ;
 
 condicional_and ::= 
@@ -352,7 +456,22 @@ condicional_and ::=
 ;
 
 condicional_not ::=
-    NOT PARENTESIS_A operaciones_logicas:a PARENTESIS_C         {:RESULT = parser.msJP.comprobacionCondicional(a, true, 3, aleft, aright);:}
+    NOT ppa operaciones_logicas:a PARENTESIS_C         {:RESULT = parser.msJP.comprobacionCondicional(a, true, 3, aleft, aright);:}
+    | NOT ppa:x PARENTESIS_A operaciones_logicas:a PARENTESIS_C         
+    {:  
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operacion logica. No se esperaba el token: << " + ((Symbol) x).value + " >>."); 
+        RESULT = parser.msJP.comprobacionCondicional(a, true, 3, aleft, aright);
+    :}
+    | NOT ppa operaciones_logicas:a error:x PARENTESIS_C         
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operacion logica. Se esperaba el token: << ) >>, no el token indicado."); 
+        RESULT = parser.msJP.comprobacionCondicional(a, true, 3, aleft, aright);
+    :}
+    | NOT ppa operaciones_logicas:a error:x                       
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion operacion logica. Se esperaba el token: << ) >>, no el token indicado."); 
+        RESULT = parser.msJP.comprobacionCondicional(a, true, 3, aleft, aright);
+    :}
     | operaciones_logicas:e                                     {:parser.mc.gotoEscribir(); RESULT = e;:}
 ;
 
@@ -377,9 +496,32 @@ lista_id_valores ::=
         }
     :}
     | ID:e                          {:RESULT = new Simbolo(null, null, e.toString());:}
+    | error:x ID:a IGUAL asignacion:e
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones. Se a recuperado hasta el token: << ; >>."); 
+        if(e != null) {        
+            RESULT = new Simbolo(((Simbolo) e).getTipo(), ((Simbolo) e), a);
+        } else { 
+            RESULT = e;
+        }
+    :}
+    | ID:a error:x IGUAL asignacion:e
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion asignacion de valores. Se esperaba el token: << = >>, no el token indicado."); 
+        if(e != null) {        
+            RESULT = new Simbolo(((Simbolo) e).getTipo(), ((Simbolo) e), a);
+        } else { 
+            RESULT = e;
+        }
+    :}
+    | error:x ID:e                          
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones. Se a recuperado hasta el token: << ; >>."); 
+        RESULT = new Simbolo(null, null, e.toString());
+    :}
     | error:e
     {:
-        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de variables, no se esperaba el token indicado.");
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de variables, no se esperaba el token indicado. Se esperaba la estructura << ID = ( Operacion Aritmetica | Entero | Decimal | Caracter) | ID >>");
     :}
 ;
 
@@ -428,6 +570,19 @@ asignacion ::=
             }
         }
     :}
+    | error:x llamada_fp:a          
+    {: 
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion llamada a un procedimiento. Se esperaba el token: << ; >>, no el token indicado."); 
+        if(a != null) {
+            Tipo tipo = ((Simbolo) a).getTipoFuncion();
+            if(tipo != null && tipo.getNombre().equals("Funcion")) {
+                RESULT = a;
+            } else {
+                parser.msJP.errorSemantico(aleft, aright, "Asignacion", "Error, la instancia es un metodo y no puede asignarse.");
+                RESULT = null;
+            }
+        }
+    :}
 ;
 
 /************************************* Arreglos ****************************************/
@@ -441,13 +596,17 @@ arreglo_const ::=
             RESULT = new Simbolo(null, e, a);
         }   
     :}
+    | error:x arreglo_const:e
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de arreglo. Se esperaba el token: << ; >>, no el token indicado.");  RESULT = e;:}
 ;
 
 dimension_const ::=
     LLAVE_A op_aritmetica_const:e LLAVE_C                               {:RESULT = e;:}
     | LLAVE_A op_aritmetica_const:e LLAVE_C dimension_const:a         {:RESULT = parser.ma.listaDimensiones(a, e, eleft, eright);:}
+    | error:x dimension_const
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de arreglo. Se esperaba la estructura: << [ ID | Entero | Decimal | Operacion Aritmetica ]... >>, no el token indicado."); :}
     | error:e
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion en la declaracion de arreglos, no se esperaba el token indicado.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion en la declaracion de arreglos. Se esperaba la estructura: << [ ID | Entero | Decimal | Operacion Aritmetica ]... >>.");:}
 ;
 
 arreglo ::=
@@ -481,18 +640,49 @@ dimension ::=
 /****************************** estructuras if ****************************************/
 
 ii ::=
-    IF PARENTESIS_A condicional:e PARENTESIS_C CORCHETE_A
+    IF ppa condicional:e PARENTESIS_C CORCHETE_A
     {:parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); RESULT = e;:}
+    | IF ppa:x PARENTESIS_A condicional:e PARENTESIS_C CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion if. Se esperaba el token: << ( >>, no el token indicado."); 
+        parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); RESULT = e;
+    :}
+    | IF ppa condicional:e PARENTESIS_C error:x CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion if. Se esperaba el token: << { >>, no el token indicado."); 
+        parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); RESULT = e;
+    :}
+    | error:x IF ppa condicional:e PARENTESIS_C CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones. Se esperaba a recuperado haste el token: << if >>."); 
+        parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); RESULT = e;
+    :}
+    
 ;
   
 ie ::=
-    ELSE_IF PARENTESIS_A condicional:e PARENTESIS_C CORCHETE_A
+    ELSE_IF ppa condicional:e PARENTESIS_C CORCHETE_A
     {:parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); RESULT = e;:}
+    | ELSE_IF ppa:x PARENTESIS_A condicional:e PARENTESIS_C CORCHETE_A
+    {:  
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion else if. Se esperaba el token: << ( >>, no el token indicado."); 
+        parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); RESULT = e;
+    :}
+    | ELSE_IF ppa PARENTESIS_A condicional:e PARENTESIS_C error:x CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion else if. Se esperaba el token: << { >>, no el token indicado."); 
+        parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); RESULT = e;
+    :}
 ;
 
 ee ::=
     ELSE CORCHETE_A
     {:parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); :}
+    | ELSE error:x CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion else. Se esperaba el token: << { >>, no el token indicado."); 
+        parser.mc.escribirEtiquetasInicio(false); parser.mc.escribirEtiquetaFin(); parser.mc.nuevoAnalisisBoolean(); 
+    :}
 ;
 
 /************************************ if **********************************************/
@@ -537,7 +727,22 @@ estructura_if ::=
 /********************************** switch ********************************************/
 
 switch_p ::=
-    SWITCH PARENTESIS_A dato:a PARENTESIS_C CORCHETE_A      {:parser.mc.setEtiquetaSwitch((Simbolo) a); RESULT = a;:}
+    SWITCH ppa dato:a PARENTESIS_C CORCHETE_A      {:parser.mc.setEtiquetaSwitch((Simbolo) a); RESULT = a;:}
+    | SWITCH ppa dato:a error:x PARENTESIS_C CORCHETE_A      
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion switch. Se esperaba el token: << ) >>, no el token indicado."); 
+        parser.mc.setEtiquetaSwitch((Simbolo) a); RESULT = a;
+    :}
+    | SWITCH ppa dato:a error:x CORCHETE_A      
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion switch. Se esperaba el token: << ) >>, no el token indicado."); 
+        parser.mc.setEtiquetaSwitch((Simbolo) a); RESULT = a;
+    :}
+    | error:x SWITCH ppa dato:a PARENTESIS_C CORCHETE_A      
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones. Se a recuperado hasta el token: << switch >>."); 
+        parser.mc.setEtiquetaSwitch((Simbolo) a); RESULT = a;
+    :}
 ;
 
 switch ::=
@@ -559,6 +764,22 @@ caso_default ::=
         parser.mc.etiquetaGoto();
         RESULT = parser.msJP.crearEstructuraCases(null, a, aleft, aright, true);
     :}
+    | DEFAULT error:x DOS_PUNTOS
+        estructuras_p:a
+        BREAK PUNTO_COMA                
+    {:  
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura switch. Se esperaba el token: << : >>, no el token indicado."); 
+        parser.mc.etiquetaGoto();
+        RESULT = parser.msJP.crearEstructuraCases(null, a, aleft, aright, true);
+    :}
+    | DEFAULT error:x
+        estructuras_p:a
+        BREAK PUNTO_COMA                
+    {:  
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura switch. Se esperaba el token: << : >>, no el token indicado."); 
+        parser.mc.etiquetaGoto();
+        RESULT = parser.msJP.crearEstructuraCases(null, a, aleft, aright, true);
+    :}
     |   {:parser.mc.etiquetaGoto();:}
 ;
 
@@ -570,6 +791,11 @@ cantidad_casos ::=
 
 caso_p ::= 
     CASE dato:a DOS_PUNTOS           {:parser.mc.condicional((Simbolo) a); RESULT = a;:}
+    | CASE error:x dato:a DOS_PUNTOS           
+    {:      
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura switch - case. Se esperaba el token: << : >>, no el token indicado."); 
+        parser.mc.condicional((Simbolo) a); RESULT = a;
+    :}
 ;
 
 caso ::= 
@@ -577,6 +803,14 @@ caso ::=
         estructuras_p:e
         BREAK PUNTO_COMA
     {:
+        RESULT = parser.msJP.crearEstructuraCases(a, e, aleft, aright, false);
+        parser.mc.finCadaCaso();
+    :}
+    | caso_p:a
+        estructuras_p:e
+        BREAK error:x PUNTO_COMA
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura switch - case. Se esperaba el token: << ; >>, no el token indicado."); 
         RESULT = parser.msJP.crearEstructuraCases(a, e, aleft, aright, false);
         parser.mc.finCadaCaso();
     :}
@@ -592,11 +826,34 @@ caso ::=
 
 while_n ::=
     WHILE                               {:RESULT = new While(parser.mc.addWhile(), null);:}
+    | error:x WHILE                               
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico el bloque de instrucciones. Se a recuperado hasta el token: << while >>."); 
+        RESULT = new While(parser.mc.addWhile(), null);
+    :}
 ;
 
 while_p ::=
-    while_n:w PARENTESIS_A condicional:a PARENTESIS_C CORCHETE_A
+    while_n:w ppa condicional:a PARENTESIS_C CORCHETE_A
     {:
+        parser.mc.nuevoAnalisisBoolean();
+        parser.mc.escribirEtiquetasInicio(false);
+        parser.mc.addEtiquetasEstructuras();
+        ((While) w).setA(a);
+        RESULT = w;
+    :}
+    | while_n:w ppa:x PARENTESIS_A condicional:a PARENTESIS_C CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura while. Se esperaba el token: << ( >>, no el token indicado."); 
+        parser.mc.nuevoAnalisisBoolean();
+        parser.mc.escribirEtiquetasInicio(false);
+        parser.mc.addEtiquetasEstructuras();
+        ((While) w).setA(a);
+        RESULT = w;
+    :}
+    | while_n:w ppa condicional:a PARENTESIS_C error:x CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura while. Se esperaba el token: << { >>, no el token indicado."); 
         parser.mc.nuevoAnalisisBoolean();
         parser.mc.escribirEtiquetasInicio(false);
         parser.mc.addEtiquetasEstructuras();
@@ -624,13 +881,63 @@ do_while_p ::=
         RESULT = parser.mc.addDoWhile();
         parser.mc.nuevoAnalisisBoolean();
     :}
+    | error:x DO CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones. Se a recuperado hasta el token: << do >>."); 
+        RESULT = parser.mc.addDoWhile();
+        parser.mc.nuevoAnalisisBoolean();
+    :}
 ;
 
 do_while ::=
     do_while_p:i
         estructuras_p:e
-    CORCHETE_C WHILE PARENTESIS_A condicional:a PARENTESIS_C PUNTO_COMA  
+    CORCHETE_C WHILE ppa condicional:a PARENTESIS_C PUNTO_COMA  
     {:
+        RESULT = parser.msJP.contruirEstructuraCiloDW(e, a, 2);
+        parser.mc.escribirEtiquetasInicio(false);
+        parser.mc.escribirEtiquetaFin();
+        parser.mc.finDoWhile((String) i);
+        parser.mc.imprimirResto();
+    :}
+    | do_while_p:i
+        estructuras_p:e
+    CORCHETE_C WHILE ppa condicional:a PARENTESIS_C error:x PUNTO_COMA  
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura do while. Se esperaba el token: << ; >>, no el token indicado."); 
+        RESULT = parser.msJP.contruirEstructuraCiloDW(e, a, 2);
+        parser.mc.escribirEtiquetasInicio(false);
+        parser.mc.escribirEtiquetaFin();
+        parser.mc.finDoWhile((String) i);
+        parser.mc.imprimirResto();
+    :}
+    | do_while_p:i
+        estructuras_p:e
+    CORCHETE_C WHILE ppa condicional:a PARENTESIS_C error:x
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura do while. Se esperaba el token: << ; >>, no el token indicado."); 
+        RESULT = parser.msJP.contruirEstructuraCiloDW(e, a, 2);
+        parser.mc.escribirEtiquetasInicio(false);
+        parser.mc.escribirEtiquetaFin();
+        parser.mc.finDoWhile((String) i);
+        parser.mc.imprimirResto();
+    :}
+    | do_while_p:i
+        estructuras_p:e
+    CORCHETE_C error:x WHILE ppa condicional:a PARENTESIS_C PUNTO_COMA  
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura do while. Se esperaba el token: << while >>, no el token indicado."); 
+        RESULT = parser.msJP.contruirEstructuraCiloDW(e, a, 2);
+        parser.mc.escribirEtiquetasInicio(false);
+        parser.mc.escribirEtiquetaFin();
+        parser.mc.finDoWhile((String) i);
+        parser.mc.imprimirResto();
+    :}
+    | do_while_p:i
+        estructuras_p:e
+    CORCHETE_C error:x ppa condicional:a PARENTESIS_C PUNTO_COMA  
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura do while. Se esperaba el token: << while >>, no el token indicado."); 
         RESULT = parser.msJP.contruirEstructuraCiloDW(e, a, 2);
         parser.mc.escribirEtiquetasInicio(false);
         parser.mc.escribirEtiquetaFin();
@@ -642,7 +949,22 @@ do_while ::=
 /************************************* For ********************************************/
 
 for_var ::=
-    FOR PARENTESIS_A var:a PUNTO_COMA           {:RESULT = new For(a, parser.mc.addForJPV((Simbolo) a));:}
+    FOR ppa var:a PUNTO_COMA           {:RESULT = new For(a, parser.mc.addForJPV((Simbolo) a));:}
+    | error:x FOR ppa var:a PUNTO_COMA           
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones. Se a recuperado hasta el token: << for >>."); 
+        RESULT = new For(a, parser.mc.addForJPV((Simbolo) a));
+    :}
+    | FOR ppa var:a error:x PUNTO_COMA           
+    {:
+        RESULT = new For(a, parser.mc.addForJPV((Simbolo) a));
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << ; >>, no el token indicado."); 
+    :}
+    | FOR ppa var:a error:x                      
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << ; >>, no el token indicado."); 
+        RESULT = new For(a, parser.mc.addForJPV((Simbolo) a));
+    :}
 ;
 
 for_condicional ::=
@@ -657,6 +979,27 @@ for_condicional ::=
 for_asignacion ::=
     for_condicional:a operaciones_asignacion:i PARENTESIS_C CORCHETE_A
     {:
+        For f = (For) a;
+        f.setI(i);
+        RESULT = parser.mc.addForJPA(f, (Simbolo) i);
+    :}
+    | for_condicional:a operaciones_asignacion:i error:x PARENTESIS_C CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << ) >>, no el token indicado."); 
+        For f = (For) a;
+        f.setI(i);
+        RESULT = parser.mc.addForJPA(f, (Simbolo) i);
+    :}
+    | for_condicional:a operaciones_asignacion:i PARENTESIS_C error:x CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << { >>, no el token indicado."); 
+        For f = (For) a;
+        f.setI(i);
+        RESULT = parser.mc.addForJPA(f, (Simbolo) i);
+    :}
+    | for_condicional:a operaciones_asignacion:i error:x CORCHETE_A
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << ) >>, no el token indicado."); 
         For f = (For) a;
         f.setI(i);
         RESULT = parser.mc.addForJPA(f, (Simbolo) i);
@@ -701,8 +1044,39 @@ operaciones_asignacion ::=
     :}
     | ID:a MAS_MAS                  {:RESULT = (new Simbolo(Constantes.INT_VAR_PJ, -1, a));:}
     | ID:a MENOS_MENOS              {:RESULT = (new Simbolo(Constantes.INT_VAR_PJ, -2, a));:}
+    | error:x ID:a IGUAL operaciones_aritmeticas:e            
+     {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de incremento en la estructura for. Se esperaba el token: << ID >>, no el token indicado."); 
+        Simbolo nuevo;
+        if(e != null) {
+            nuevo = new Simbolo(((Simbolo) e).getTipo(), e, a);
+        } else { 
+            nuevo = null;
+        }
+        RESULT = nuevo;
+    :}
+    | ID:a error:x operaciones_aritmeticas:e            
+     {:
+        Simbolo nuevo;
+        if(e != null) {
+            nuevo = new Simbolo(((Simbolo) e).getTipo(), e, a);
+        } else { 
+            nuevo = null;
+        }
+        RESULT = nuevo;
+    :}
+    | error:x ID:a MAS_MAS                  
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion incremento de la estructura for. Se esperaba el token: << ID >>, no el token indicado."); 
+        RESULT = (new Simbolo(Constantes.INT_VAR_PJ, -1, a));
+    :}
+    | error:x ID:a MENOS_MENOS              
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion incremento de la estructura for. Se esperaba el token: << ID >>, no el token indicado."); 
+        RESULT = (new Simbolo(Constantes.INT_VAR_PJ, -2, a));
+    :}
     | error:e
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la asignacion de incremento en la estructura for.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la asignacion de incremento en la estructura for. Se espera la estructura: << ID = (Entero | Decimal | Operacion Aritmetica) | ID++ | ID-->>");:}
 ;
 
 /********************************* Parametros *****************************************/
@@ -735,15 +1109,15 @@ parametros_p ::=
     | error:e
     {: 
         RESULT = new ArrayList<>();
-        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros.");
+        parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros. Se esperaba: << ID | ID , ID... >>");
     :}
 ;
 
 /************************ Llamado de Funciones - Metodos *******************************/
 
 llamada_fp ::=
-    PY PUNTO ID:a PARENTESIS_A parametros:e PARENTESIS_C                    {:RESULT = parser.mi.searchSimbolo(null, a, 3, aleft, aright, e, "");:}
-    | VB PUNTO ID:a PARENTESIS_A parametros:e PARENTESIS_C                  {:RESULT = parser.mi.searchSimbolo(null, a, 1, aleft, aright, e, "");:}
+    PY PUNTO ID:a ppa parametros:e PARENTESIS_C                    {:RESULT = parser.mi.searchSimbolo(null, a, 3, aleft, aright, e, "");:}
+    | VB PUNTO ID:a ppa parametros:e PARENTESIS_C                  {:RESULT = parser.mi.searchSimbolo(null, a, 1, aleft, aright, e, "");:}
     | JAVA PUNTO ID:a PUNTO ID:e PARENTESIS_A parametros:i PARENTESIS_C     {:RESULT = parser.mi.buscarInstancia(e, a, aleft, aright, i, "");:}
 ;
 
@@ -775,14 +1149,44 @@ i_ins ::=
             RESULT =  new Simbolo(null, a, e);
         } 
     :}
+    | error:x ID:e                                {:RESULT =  new Simbolo(null, new ArrayList<>(), e);:}
+    | error:x ID:e PARENTESIS_A PARENTESIS_C    
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion instancia de objetos. Se esperaba el token: << ID >>, no el token indicado."); 
+        RESULT =  new Simbolo(null, new ArrayList<>(), e);
+    :}
+    | error:x ID:e PARENTESIS_A parametros:a PARENTESIS_C       
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion instancia de objetos. Se esperaba el token: << ID >>, no el token indicado."); 
+        if(a != null) {
+            RESULT =  new Simbolo(null, a, e);
+        } 
+    :}
     | error:e
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de un objeto, no se esperaba el token indicado.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de un objeto, no se esperaba el token indicado. Estructura esperada: << ID | ID ( params ) | ID () >>");:}
 ;
 
 /*********************************** Scanf ********************************************/
 
 scanf ::=
-    SCANF PARENTESIS_A COMILLAS texto_cadena:i tipo_dato_almacenar:a COMILLAS COMA AMPERSAND ID:e PARENTESIS_C
+    SCANF ppa COMILLAS texto_cadena:i tipo_dato_almacenar:a COMILLAS COMA AMPERSAND ID:e PARENTESIS_C
+    {:
+        parser.mc.imprimir(new Simbolo(null, "\"" + i + "\""));
+        Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
+        if(s != null) {
+            parser.mc.imprimirScanf((int) a, s);
+        } 
+        RESULT = s;   
+    :}
+    | SCANF ppa COMILLAS tipo_dato_almacenar:a COMILLAS COMA AMPERSAND ID:e PARENTESIS_C
+    {:
+        Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
+        if(s != null) {
+            parser.mc.imprimirScanf((int)a, s);
+        } 
+        RESULT = s;   
+    :}
+    | SCANF ppa COMILLAS texto_cadena:i tipo_dato_almacenar:a COMILLAS COMA ID:e PARENTESIS_C
     {:
         parser.mc.imprimir(new Simbolo(null, "\"" + i + "\""));
         Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
@@ -791,7 +1195,7 @@ scanf ::=
         } 
         RESULT = s;   
     :}
-    | SCANF PARENTESIS_A COMILLAS tipo_dato_almacenar:a COMILLAS COMA AMPERSAND ID:e PARENTESIS_C
+    | SCANF ppa COMILLAS tipo_dato_almacenar:a COMILLAS COMA ID:e PARENTESIS_C
     {:
         Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
         if(s != null) {
@@ -799,8 +1203,9 @@ scanf ::=
         } 
         RESULT = s;   
     :}
-    | SCANF PARENTESIS_A COMILLAS texto_cadena:i tipo_dato_almacenar:a COMILLAS COMA ID:e PARENTESIS_C
+    | error:x SCANF ppa COMILLAS texto_cadena:i tipo_dato_almacenar:a COMILLAS COMA AMPERSAND ID:e PARENTESIS_C
     {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion scanf. Se esperaba el token: << scanf >>, no el token indicado."); 
         parser.mc.imprimir(new Simbolo(null, "\"" + i + "\""));
         Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
         if(s != null) {
@@ -808,8 +1213,28 @@ scanf ::=
         } 
         RESULT = s;   
     :}
-    | SCANF PARENTESIS_A COMILLAS tipo_dato_almacenar:a COMILLAS COMA ID:e PARENTESIS_C
+    | error:x SCANF ppa COMILLAS tipo_dato_almacenar:a COMILLAS COMA AMPERSAND ID:e PARENTESIS_C
     {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion scanf. Se esperaba el token: << scanf >>, no el token indicado."); 
+        Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
+        if(s != null) {
+            parser.mc.imprimirScanf((int)a, s);
+        } 
+        RESULT = s;   
+    :}
+    | error:x SCANF ppa COMILLAS texto_cadena:i tipo_dato_almacenar:a COMILLAS COMA ID:e PARENTESIS_C
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion scanf. Se esperaba el token: << scanf >>, no el token indicado."); 
+        parser.mc.imprimir(new Simbolo(null, "\"" + i + "\""));
+        Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
+        if(s != null) {
+            parser.mc.imprimirScanf((int)a, s);
+        } 
+        RESULT = s;   
+    :}
+    | error:x SCANF ppa COMILLAS tipo_dato_almacenar:a COMILLAS COMA ID:e PARENTESIS_C
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion scanf. Se esperaba el token: << scanf >>, no el token indicado."); 
         Simbolo s = parser.msJP.metodoBuscarID(e, eleft, eright);
         if(s != null) {
             parser.mc.imprimirScanf((int)a, s);
@@ -838,33 +1263,45 @@ tipo_dato_almacenar ::=
 
 printf ::=
     PRINTF PARENTESIS_A COMILLAS texto_p:a COMILLAS COMA valores:e PARENTESIS_C 
-    {:RESULT = parser.msJP.comprobarPrint(a, e, eleft, eright);
-        parser.mc.imprimir(new Simbolo(null, "\"\\n\""));
+    {:
+        RESULT = parser.msJP.comprobarPrint(a, e, eleft, eright);
     :}
     | PRINTF PARENTESIS_A COMILLAS texto_cadena:e COMILLAS PARENTESIS_C 
-    {:parser.mc.imprimir(new Simbolo(null, "\"" + e + "\""));
-        parser.mc.imprimir(new Simbolo(null, "\"\\n\""));
+    {:
+        parser.mc.imprimir(new Simbolo(null, "\"" + e + "\""));
     :}
     | PRINTF PARENTESIS_A COMILLAS COMILLAS PARENTESIS_C 
     {:
-        parser.mc.imprimir(new Simbolo(null, "\"\\n\""));
+        parser.mc.imprimir(new Simbolo(null, "\"\""));
     :}
 ;
 
 valores ::=
-    ID:e                            {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
-    | ID:e vp:a                     {:RESULT = parser.msJP.listaPrintfVal(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}
-    | AMPERSAND ID:e                {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
-    | AMPERSAND ID:e vp:a           {:RESULT = parser.msJP.listaPrintfVal(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}
+    asignacion:e                            {:RESULT = e;:}
+    | asignacion:e vp:a                     {:RESULT = parser.msJP.listaPrintfVal(a, e);:}
+    | AMPERSAND asignacion:e                {:RESULT = e;:}
+    | AMPERSAND asignacion:e vp:a           {:RESULT = parser.msJP.listaPrintfVal(a, e);:}
 ;
 
 vp ::=
     COMA ID:e                       {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
     | vp:a COMA ID:e                {:RESULT = parser.msJP.listaPrintf(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}    
+    | COMA error:x ID:e                       
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion id, de la estructura printf. Se esperaba el token: << ID | &ID >>, no el token indicado."); 
+        RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);
+    :}
+    | vp:a COMA error:x ID:e                
+    {:
+        RESULT = parser.msJP.listaPrintf(a, parser.msJP.metodoBuscarID(e, eleft, eright));
+        parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion id, de la estructura printf. Se esperaba el token: << ID | &ID >>, no el token indicado."); 
+    :}    
     | COMA AMPERSAND ID:e           {:RESULT = parser.msJP.metodoBuscarID(e, eleft, eright);:}
     | vp:a COMA AMPERSAND ID:e      {:RESULT = parser.msJP.listaPrintf(a, parser.msJP.metodoBuscarID(e, eleft, eright));:}    
     | error:e
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico, en las intrucciones de variables print, no se esperaba el token indicado.");:}
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error sintactico, en las intrucciones de variables print, no se esperaba el token indicado. Se esperaba el token: << ID | &ID >>");:}
+    | COMA error:x
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en la instruccion id, de la estructura printf. Se esperaba el token: << ID | &ID >>, no el token indicado."); :}
 ;
 
 /*********************************  Estructura ******************************************/
@@ -877,7 +1314,19 @@ estructuras ::=
     | switch:e                                      {:RESULT = e;:}
     | asignacion_var PUNTO_COMA                     {:/* Ignore */:}
     | getch                                         {:/* Ignore */:}
+    | error:x CLRSCR PARENTESIS_A PARENTESIS_C PUNTO_COMA   
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones clrsrc. Se esperaba el token: << clrsrc >>"); parser.mc.addCLRSCR();:}
     | CLRSCR PARENTESIS_A PARENTESIS_C PUNTO_COMA   {:parser.mc.addCLRSCR();:}
+    | CLRSCR PARENTESIS_A PARENTESIS_C error:x PUNTO_COMA   
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones clrsrc. Se esperaba el token: << ; >>"); parser.mc.addCLRSCR();:}
+    | CLRSCR PARENTESIS_A PARENTESIS_C error:x        
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones clrsrc. Se esperaba el token: << ; >>"); parser.mc.addCLRSCR();:}
+    | CLRSCR error:x PARENTESIS_C PUNTO_COMA   
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones clrsrc. Se esperaba el token: << ( >>"); parser.mc.addCLRSCR();:}
+    | CLRSCR PARENTESIS_A error:x PUNTO_COMA        
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones clrsrc. Se esperaba el token: << ) >>"); parser.mc.addCLRSCR();:}
+    | CLRSCR error:x PUNTO_COMA   
+    {:parser.msJP.errorSintax(xleft, xright, x, "Error sintactico en el bloque de instrucciones clrsrc. Se esperaba el token: << () >>"); parser.mc.addCLRSCR();:}
     | estructura_if:e                               {:RESULT = e;:}
     | declaracion_variables:e PUNTO_COMA            {:RESULT = e;:}
     | instancia_constructor PUNTO_COMA              {:/* Ignore */:}
@@ -888,15 +1337,15 @@ estructuras ::=
         parser.mc.addYRemovePuntero(as, false);
     :}
     | COMENTARIO                                    {:/* Ignore */:}
-    | error:e PUNTO_COMA                            
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
-    | error:e CORCHETE_C                            
-    {:parser.msJP.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
+    | error:e PUNTO_COMA                   
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ; >>");:}
+    | error:e CORCHETE_C                    
+    {:parser.msJP.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << } >>");:}
 ;
 
 getch ::=
-    GETCH PARENTESIS_A PARENTESIS_C PUNTO_COMA                          {:parser.mc.addGetch(null);:}
-    | tipo_dato:t ID:a IGUAL GETCH PARENTESIS_A PARENTESIS_C PUNTO_COMA          
+    GETCH ppa PARENTESIS_C PUNTO_COMA                          {:parser.mc.addGetch(null);:}
+    | tipo_dato:t ID:a IGUAL GETCH ppa PARENTESIS_C PUNTO_COMA          
     {:
         if (!(((Tipo) t).equals(Constantes.FLOAT_VAR_PJ))) {
             Object resultado = parser.msJP.declararVariables(new Simbolo((Tipo) t, new Simbolo(null, null, (String) a)), aleft, aright);
@@ -908,8 +1357,86 @@ getch ::=
         }
     
     :}
-    | ID:a IGUAL GETCH PARENTESIS_A PARENTESIS_C PUNTO_COMA    
+    | ID:a IGUAL GETCH ppa PARENTESIS_C PUNTO_COMA    
     {:
+        Simbolo s = parser.msJP.metodoBuscarID((String) a, aleft, aright);
+        if (s != null) {
+            parser.mc.addGetch(s);
+        }
+    :}
+    | GETCH error:x PUNTO_COMA                          
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ( >>");
+        parser.mc.addGetch(null);
+    :}
+    | tipo_dato:t ID:a IGUAL GETCH error:x PUNTO_COMA          
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ( >>");
+        if (!(((Tipo) t).equals(Constantes.FLOAT_VAR_PJ))) {
+            Object resultado = parser.msJP.declararVariables(new Simbolo((Tipo) t, new Simbolo(null, null, (String) a)), aleft, aright);
+            if (resultado != null) {
+                if (resultado instanceof Simbolo) {
+                    parser.mc.addGetch((Simbolo) resultado);
+                }  
+            } 
+        }
+    
+    :}
+    | ID:a IGUAL GETCH error:x PUNTO_COMA    
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ( >>");
+        Simbolo s = parser.msJP.metodoBuscarID((String) a, aleft, aright);
+        if (s != null) {
+            parser.mc.addGetch(s);
+        }
+    :}
+    | GETCH error:x                               
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ( >>");
+        parser.mc.addGetch(null);
+    :}
+    | tipo_dato:t ID:a IGUAL GETCH error:x
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ( >>");
+        if (!(((Tipo) t).equals(Constantes.FLOAT_VAR_PJ))) {
+            Object resultado = parser.msJP.declararVariables(new Simbolo((Tipo) t, new Simbolo(null, null, (String) a)), aleft, aright);
+            if (resultado != null) {
+                if (resultado instanceof Simbolo) {
+                    parser.mc.addGetch((Simbolo) resultado);
+                }  
+            } 
+        }
+    
+    :}
+    | ID:a IGUAL GETCH error:x 
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ( >>");
+        Simbolo s = parser.msJP.metodoBuscarID((String) a, aleft, aright);
+        if (s != null) {
+            parser.mc.addGetch(s);
+        }
+    :}
+    | GETCH ppa PARENTESIS_C error:x                               
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ; >>");
+        parser.mc.addGetch(null);
+    :}
+    | tipo_dato:t ID:a IGUAL GETCH ppa PARENTESIS_C error:x
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ; >>");
+        if (!(((Tipo) t).equals(Constantes.FLOAT_VAR_PJ))) {
+            Object resultado = parser.msJP.declararVariables(new Simbolo((Tipo) t, new Simbolo(null, null, (String) a)), aleft, aright);
+            if (resultado != null) {
+                if (resultado instanceof Simbolo) {
+                    parser.mc.addGetch((Simbolo) resultado);
+                }  
+            } 
+        }
+    
+    :}
+    | ID:a IGUAL GETCH ppa PARENTESIS_C error:x 
+    {:
+        parser.msJP.errorSintax(xleft, xright, x, "Error en el bloque de instrucciones de la estructura getch, por favor revisa la entrada en la linea y columna indicada. Se esperaba el token: << ; >>");
         Simbolo s = parser.msJP.metodoBuscarID((String) a, aleft, aright);
         if (s != null) {
             parser.mc.addGetch(s);
@@ -923,7 +1450,14 @@ estructuras_p ::=
 ;
 
 texto_cadena ::= 
-    texto_cadena:a texto:e          {:RESULT = new String(a.toString()  + " " + e.toString());:}
+    texto_cadena:a texto:e          
+    {:
+        if(a.toString() == "") {
+            RESULT = new String(e.toString()); 
+        } else {
+            RESULT = new String(a.toString()  + " " + e.toString());
+        }
+    :}
     | texto:e                       {:RESULT = e;:}
 ;
 

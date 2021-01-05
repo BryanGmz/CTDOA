@@ -133,7 +133,6 @@ public class ManejadorBuscarMetodos {
                     if (cuarteto.getResultado().getId().equalsIgnoreCase("p")
                         && cuarteto.getOperando1().getId().equalsIgnoreCase("p")
                         && cuarteto.getOperando2().getValor() == null) {
-                        System.out.println("Entra");
                         cuarteto.setOperando2(new Simbolo(null, manejadorHeap.size()));
                     }
                 }

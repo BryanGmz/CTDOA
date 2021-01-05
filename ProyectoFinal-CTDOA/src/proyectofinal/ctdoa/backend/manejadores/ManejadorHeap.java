@@ -123,12 +123,19 @@ public class ManejadorHeap {
         //Agregado
         param = listaParams(param);
         //
+        Cuarteto x = null;
+        if (!principal) {
+            x = manejadorCuartetos.addApuntador(1); //Puntero al this
+            x = manejadorCuartetos.addPunteroFuncin(x); //tempm = stack[puntero_this]
+        }
         manejadorCuartetos.addYRemovePuntero(null, true); // p = p + n
         Simbolo clonado = null;
         int contadorStack = 2;
+        ManejadorConstructores manejadorConstructores = ManejadorConstructores.getInstancia();
         if (principal) {
-            ManejadorConstructores manejadorConstructores = ManejadorConstructores.getInstancia();
             manejadorConstructores.addReferenciaThis(apuntadorThis);
+        } else {
+            manejadorConstructores.addReferenciaThis(x);
         }
         for (Simbolo simbolo : param) {
             if (simbolo.getId() != null) {
@@ -172,13 +179,9 @@ public class ManejadorHeap {
     }
     
     public void imprimirTabla(){
-        System.out.println("Tabla - Metodos: \n");
-        System.out.println("S-M\tP-M\t\t\tTipo\t\t\t\tSize\t\t\t\tRol\t\t\t\tA 3AC\t\t\t\tNombre");
         listaMetodos.forEach((ts) -> {
             manejadorTablaPila.print(ts);
         });
-        System.out.println("Tabla - Instancias: \n");
-        System.out.println("S-M\tP-M\t\t\tTipo\t\t\t\tSize\t\t\t\tRol\t\t\t\tA 3AC\t\t\t\tNombre");
         heapInstancias.forEach((ts) -> {
             manejadorTablaPila.print(ts);
         });

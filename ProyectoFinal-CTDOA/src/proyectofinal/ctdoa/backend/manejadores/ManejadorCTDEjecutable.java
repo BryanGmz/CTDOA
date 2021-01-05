@@ -120,12 +120,16 @@ public class ManejadorCTDEjecutable {
                     salida += ":";
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.IMPRIMIR_CONSOLA)) {
                     if (cuarteto.getOperando1().toString().equalsIgnoreCase("")
-                            || cuarteto.getOperando1().toString().equalsIgnoreCase("\"\"")) {
-                        salida += "printf(\" \");";
+                            || cuarteto.getOperando1().toString().equalsIgnoreCase("\"\"")
+                            || cuarteto.getOperando1().toString().equalsIgnoreCase("\" \"")
+                            ) {
+                        salida += "printf(\"\");";
                     } else {
-                        salida += "printf(" + cuarteto.getOperando1().toString() + ");";
+                        String aux = cuarteto.getOperando1().toString().replace("\\ n", "\\n");
+                        aux = aux.replaceAll("\"", "");
+                        aux = "\"" + aux + " \"";
+                        salida += "printf(" + aux   + ");";
                     }
-//                    salida += "printf(\"\\n\" );";
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.PROCEDIMIENTO)) {
                     salida += cuarteto.getOperando1().getId();
                 } else if (cuarteto.getOperador().equalsIgnoreCase("$FinProcedimiento")) {
@@ -147,8 +151,11 @@ public class ManejadorCTDEjecutable {
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.SCANF)){
                     salida += "scanf(" + cuarteto.getOperando1().getValor() + cuarteto.getOperando1().getId() + ");";
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.PRINTF)){
-                    System.out.println(cuarteto.getOperando1().getId());
-                    salida += "printf(" + cuarteto.getOperando1().getValor() + cuarteto.getOperando1().getId() + ");";
+                    if (cuarteto.getOperando2() != null) {                        
+                        salida += "printf(\" %f \", " + cuarteto.getOperando1().getId() + ");";
+                    } else {
+                        salida += "printf(" + cuarteto.getOperando1().getValor() + cuarteto.getOperando1().getId() + ");";
+                    }
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.GETCH)) {
                     if (cuarteto.getResultado() != null) {
                         salida += cuarteto.getResultado().getId() + " =  getchar();";
@@ -157,33 +164,18 @@ public class ManejadorCTDEjecutable {
                     }
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.CLRSCR)) {
                     salida += "system(\"clear\");";
-                } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.ARREGLO)) {
-                    switch (cuarteto.getResultado().getTipo().getSymbol()) {
-                        case Constantes.CHAR:
-                            salida += "char ";
-                            break;
-                        case Constantes.INT:
-                            salida += "int ";
-                            break;
-                        case Constantes.FLOAT:
-                            salida += "float ";
-                            break;
-                        default:
-                    }
-                    salida += cuarteto.getResultado().getId();
-                    salida += cuarteto.getOperando1().getId();
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.ASG_ARREGLO)){
                     salida += "stack";
-                    salida += cuarteto.getOperando1().getId() + " = " ;
+                    salida += getStackTemps(cuarteto.getOperando1().getId()) + " = " ;
                      if (cuarteto.getOperando2().getId() != null) {
-                        salida += cuarteto.getOperando2().getId();
+                        salida += (cuarteto.getOperando2().getId());
                     } else if (cuarteto.getOperando2().getValor() != null) {
-                        salida += cuarteto.getOperando2().getValor().toString();
+                        salida += (cuarteto.getOperando2().getValor().toString());
                     } 
                     salida += ";";
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.GET_ARREGLO)){
                     salida += cuarteto.getResultado().getId() + " = ";
-                    salida += "stack" + cuarteto.getOperando1().getId();
+                    salida += "stack" + getStackTemps(cuarteto.getOperando1().getId());
                     salida += ";";
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.ASG)){
                     salida += cuarteto.getResultado().getId();
@@ -206,5 +198,13 @@ public class ManejadorCTDEjecutable {
         ManejadorGenerarAssembler manejadorGenerarAssembler = ManejadorGenerarAssembler.getInstancia();
         manejadorGenerarAssembler.construirAssembler(listaCuartetos, listaCuartetosDeclaraciones);
         return regresar;
+    }
+    
+    public String getStackTemps(String temp){
+        if (temp.contains("[")) {
+            return temp;
+        } else {
+            return "[" + temp + "]";
+        }
     }
 }

@@ -75,9 +75,9 @@ public class ManejadorArreglos {
     
     public void imprimir(List<Object> list){
         list.forEach((object) -> {
-            System.out.println(object);
+            //System.out.println(object);
         });
-        System.out.println("\n\n");
+        //System.out.println("\n\n");
     }
     
     public void addArreglo(List<Object> lista, Tipo tipo, Simbolo destino){

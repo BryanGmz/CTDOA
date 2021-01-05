@@ -27,6 +27,7 @@ public class ManejadorSintacticoJP {
     private TablaSimbolos tablaSimbolos;
     private int contadorAmbitos;
     private int contadorLineas;
+    private String error = "";
     
     protected ManejadorSintacticoJP() {}
     
@@ -88,8 +89,14 @@ public class ManejadorSintacticoJP {
                 Object valor;
                 if (value != null && value instanceof Symbol) {
                     valor = ((Symbol) value).value;
+                    error = ((Symbol) value).value.toString();
                 } else {
                     valor = value;
+                    if (valor == null) {
+                        valor = error;
+                    } else {
+                        error = valor.toString();
+                    }
                 }
                 if (mensaje.isEmpty()) {
                     frameCTDOA.addErrores(
@@ -282,7 +289,6 @@ public class ManejadorSintacticoJP {
             List<Simbolo> retornar = new ArrayList<>();
             for (Simbolo simbolo : (List<Simbolo>) s.getValor()) {
                 simbolo.setAmbito(0);
-                System.out.println("Simbolo " + simbolo);
                 if (simbolo.getTipo() == null) {
                     simbolo.setTipo(tipo);
                     simbolo.setGlobal(true);
@@ -1421,7 +1427,14 @@ public class ManejadorSintacticoJP {
                     manejadorCuartetos.imprimir(new Simbolo(null, "\"" + lista.get(0).getMensaje() + "\""));
                 }
                 if (comprobarErrorPrintf(lista.get(0).getComodin(), simbolos.get(0))) {
-                    manejadorCuartetos.imprimirPrintf(lista.remove(0).getComodin(), simbolos.remove(0));
+                    Simbolo aux1 = (Simbolo) simbolos.remove(0);
+                    if (((Simbolo) aux1).getTipoFuncion() != null) {
+                        aux1 = auxRO();
+                        manejadorCuartetos.imprimirPrintf(0, aux1, lista.remove(0).getComodin());
+                    } else {
+                        manejadorCuartetos.imprimirPrintf(lista.remove(0).getComodin(), aux1, 1);
+                    }
+                    
                 } else {
                     lista.remove(0);
                     simbolos.remove(0);

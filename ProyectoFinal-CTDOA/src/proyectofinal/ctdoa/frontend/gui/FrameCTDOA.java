@@ -147,7 +147,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
         });
         menuArchivo.add(menuNuevo);
 
-        menuGuardar.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_MASK));
+        menuGuardar.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_MASK));
         menuGuardar.setText("Guardar");
         menuGuardar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -156,7 +156,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
         });
         menuArchivo.add(menuGuardar);
 
-        menuGuardarComo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        menuGuardarComo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
         menuGuardarComo.setText("Guardar Como");
         menuGuardarComo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -176,9 +176,9 @@ public class FrameCTDOA extends javax.swing.JFrame {
 
         menu.add(menuArchivo);
 
-        menuGenerarCodigo.setText("Generar Codigo");
+        menuGenerarCodigo.setText("Generar");
 
-        codigoTresDirecciones.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
+        codigoTresDirecciones.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
         codigoTresDirecciones.setText("Tres Direcciones");
         codigoTresDirecciones.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -187,8 +187,8 @@ public class FrameCTDOA extends javax.swing.JFrame {
         });
         menuGenerarCodigo.add(codigoTresDirecciones);
 
-        codigoAsembler.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.SHIFT_MASK | java.awt.event.InputEvent.CTRL_MASK));
-        codigoAsembler.setText("Assembler");
+        codigoAsembler.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.CTRL_MASK));
+        codigoAsembler.setText("Ensamblador");
         codigoAsembler.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 codigoAsemblerActionPerformed(evt);
@@ -200,7 +200,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
 
         menuEjecutar.setText("Ejecutar");
 
-        ejecutarTresDirecciones.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_T, java.awt.event.InputEvent.ALT_MASK));
+        ejecutarTresDirecciones.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Q, java.awt.event.InputEvent.CTRL_MASK));
         ejecutarTresDirecciones.setText("Tres Direcciones");
         ejecutarTresDirecciones.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -209,8 +209,8 @@ public class FrameCTDOA extends javax.swing.JFrame {
         });
         menuEjecutar.add(ejecutarTresDirecciones);
 
-        ejecutarAssembler.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.ALT_MASK));
-        ejecutarAssembler.setText("Assembler");
+        ejecutarAssembler.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
+        ejecutarAssembler.setText("Ensamblador");
         menuEjecutar.add(ejecutarAssembler);
 
         menu.add(menuEjecutar);
@@ -258,7 +258,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(lblSeleccionado1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 209, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(10, 10, 10))
         );
 
@@ -340,47 +340,45 @@ public class FrameCTDOA extends javax.swing.JFrame {
 
     private void codigoTresDireccionesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_codigoTresDireccionesActionPerformed
         // TODO add your handling code here:
-        if(pestañaActual != null) {
-            if (pestañaActual.getTitulo().equalsIgnoreCase("Programa")) {
-                try {
-                    if (!pestañaActual.getTextArea().getText().isEmpty()) {
-                        ManejadorCTD mctd = ManejadorCTD.getInstancia();
-                        ManejadorCTDEjecutable mctde =  ManejadorCTDEjecutable.getInstancia();
-                        ManejadorInstancias manejadorInstancias = ManejadorInstancias.getInstance();
-                        manejadorInstancias.nuevoAnalisis();
-                        ManejadorTablaPila manejadorTablaPila = ManejadorTablaPila.getInstancia();
-                        manejadorTablaPila.nuevoAnalisis();
-                        ManejadorHeap manejadorHeap = ManejadorHeap.getInstancia();
-                        manejadorHeap.nuevoAnalisis();
-                        textErrores.setText("");
-                        ManejadorCuartetos cuartetos =  ManejadorCuartetos.getInstancia();
-                        manejadorTablaPila.setManejadorCuartetos(cuartetos);
-                        cuartetos.nuevoAnalisis();
-                        LexicoC lexicoC = new LexicoC(new StringReader(pestañaActual.getTextArea().getText()));
-                        SintacticoC sintacticoC = new SintacticoC(lexicoC);
-                        sintacticoC.setFrameCTDOA(this);
-                        sintacticoC.parse();
-                        if (!textErrores.getText().isEmpty()) {
-                            JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
-                        } else {
-                            String salidaEjecutable = mctde.print(cuartetos.getCuartetos());
-                            ManejadorEjecutarCodigo manejadorEjecutarCodigo = ManejadorEjecutarCodigo.getInstancia();
-                            manejadorEjecutarCodigo.setSalida(salidaEjecutable);
-                            JOptionPane.showMessageDialog(null, "Analisis, realizado con exito. Ve a la pestaña Codigo Tres Direcciones.");
-                            pestañas.get(1).getTextArea().setText(mctd.print(cuartetos.getCuartetos()));
-                            pestañas.get(2).getTextArea().setText(salidaEjecutable);
-                        }
-                        manejadorTablaPila.imprimirTabla();
+        if(pestañas != null && !pestañas.isEmpty()) {
+            try {
+                if (!pestañas.get(0).getTextArea().getText().isEmpty()) {
+                    ManejadorCTD mctd = ManejadorCTD.getInstancia();
+                    ManejadorCTDEjecutable mctde =  ManejadorCTDEjecutable.getInstancia();
+                    ManejadorInstancias manejadorInstancias = ManejadorInstancias.getInstance();
+                    manejadorInstancias.nuevoAnalisis();
+                    ManejadorTablaPila manejadorTablaPila = ManejadorTablaPila.getInstancia();
+                    manejadorTablaPila.nuevoAnalisis();
+                    ManejadorHeap manejadorHeap = ManejadorHeap.getInstancia();
+                    manejadorHeap.nuevoAnalisis();
+                    textErrores.setText("");
+                    ManejadorCuartetos cuartetos =  ManejadorCuartetos.getInstancia();
+                    manejadorTablaPila.setManejadorCuartetos(cuartetos);
+                    cuartetos.nuevoAnalisis();
+                    LexicoC lexicoC = new LexicoC(new StringReader(pestañaActual.getTextArea().getText()));
+                    SintacticoC sintacticoC = new SintacticoC(lexicoC);
+                    sintacticoC.setFrameCTDOA(this);
+                    sintacticoC.parse();
+                    if (!textErrores.getText().isEmpty()) {
+                        JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(null, "No se a seleccionado ningun archivo.", "INFORMACION", JOptionPane.INFORMATION_MESSAGE);
-                        JOptionPane.showMessageDialog(null, "Debes de clickear el editor de texto.", "INFORMACION", JOptionPane.INFORMATION_MESSAGE);
+                        String salidaEjecutable = mctde.print(cuartetos.getCuartetos());
+                        ManejadorEjecutarCodigo manejadorEjecutarCodigo = ManejadorEjecutarCodigo.getInstancia();
+                        manejadorEjecutarCodigo.setSalida(salidaEjecutable);
+                        JOptionPane.showMessageDialog(null, "Analisis, realizado con exito. Ve a la pestaña Codigo Tres Direcciones.");
+                        pestañas.get(1).getTextArea().setText(mctd.print(cuartetos.getCuartetos()));
+                        pestañas.get(2).getTextArea().setText(salidaEjecutable);
                     }
-                } catch (Exception ex) {
-                    System.out.println(ex.toString());
-                    JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
-                }   
-            }
+                    manejadorTablaPila.imprimirTabla();
+                } else {
+                    JOptionPane.showMessageDialog(null, "No se a seleccionado ningun archivo.", "INFORMACION", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (Exception ex) {
+                System.out.println(ex.toString());
+                JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
+            }   
         }
+        
     }//GEN-LAST:event_codigoTresDireccionesActionPerformed
 
     private void ejecutarTresDireccionesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ejecutarTresDireccionesActionPerformed
@@ -446,7 +444,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
         }
     }
 
-    /* Metodo que regresa el par de ina pestania */
+    /* Metodo que regresa el path de una pestania */
     private String pathPestania(){
         switch (pestañaActual.getTitulo()) {
             case "Programa":
@@ -464,7 +462,6 @@ public class FrameCTDOA extends javax.swing.JFrame {
     
     /* Metodo que genera un archivo: Si Pestania 0 -> mlg si 1 o 2 .cpp sino asm */
     private void guardar(String path, String textoSalida) throws IOException{
-        System.out.println(path);
         File chooser = new File(path);
         try (FileOutputStream salida = new FileOutputStream(chooser)) {
             byte[] byteTxt = textoSalida.getBytes();
@@ -480,7 +477,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
         this.agregarPestaña("Programa", "", "");
         this.agregarPestaña("Codigo Tres Direcciones", "", "");
         this.agregarPestaña("Codigo Tres Direcciones - Ejecutable", "", "");
-        this.agregarPestaña("Assembler", "", "");
+        this.agregarPestaña("Ensamblador", "", "");
     }
     
     /* Metodo para agregar una nueva pestania. */

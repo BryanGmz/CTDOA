@@ -75,42 +75,51 @@ public class Constantes {
     public final static String ARREGLO  = "ARREGLO";
     public final static String ASG_ARREGLO  = "ASG_ARREGLO";
     public final static String GET_ARREGLO  = "GET_ARREGLO";
+    
     public final static String ENCABEZADO_ASM = 
-            "section .data\n";
-    public final static String ENCABEZADO = ""
+            "default rel"
+            + "\nextern printf, exit\n"
+            + "extern scanf\n"
+            + "\nsection .data\n";
+    
+     public final static String ENCABEZADO = ""
             + "\nsection .text"
-            + "\n\tglobal _start\n"
-            + "_start: \n"
-            + "\tcall main    ; Llamando al main";
+            + "\n\tglobal main\n"
+            + "main: \n"
+            + "\tcall inicio            ; Llamando al main";
+            //+ "\n" + Constantes.FIN_PROGRAMA + "\n";
+    
+    
     public final static String FIN_PROGRAMA = ""
             + "\n\t;Cerrando el Programa\n" +
-            "\tmov ah,4ch\n" +
-            "\tint 21h\n";
-    public final static String FIN = "";
-//            + "\nPrograma endp"
-//            + "\nend Programa";
-    public final static String CODE = ".code";
-    public final static String END = "end";
-    public final static String ENDP = "endp";
-    public final static String EXIT = ".exit";
+            "\tmov\teax,\t1\t\t; system call number (sys_exit)\n" +
+            "\tint\t\t80h\t\t\t; call kernel\n";
+    
+    public final static String SRC_MSG = " equ $ - ";
+    public final static String LEN = "\tlen";
+    public final static String LEA = "\tlea";
     public final static String MOV = "\tmov";
     public final static String CALL_ASM = "\tcall";
     public final static String ADD = "\tadd";
     public final static String SUB = "\tsub";
     public final static String MUL = "\tmul";
     public final static String DIV_ASM = "\tdiv";
-    public final static String SEG_DATA = "SEG @data";
-    public final static String OFFSET = "offset";
-    public final static String TYPEDEF = "typedef";
-    public final static String LEA = "\tlea";
     public final static String INRRUPCION = "\tint 21h";
-    public final static String PROC = "proc";
+    public final static String INRRUPCION_80H = "\tint 80h";
     public final static String RET = "ret";
     public final static String DB = "db"; //Int o Char
     public final static String DW = "dw"; //Float 
+    public final static String DQ = "dw"; //Float 
     public final static String EAX = "eax";
     public final static String EBX = "ebx";
+    public final static String ECX = "ecx";
     public final static String EDX = "edx";
+    public final static String RDI = "rdi";
+    public final static String RSI = "rsi";
+    public final static String RAX = "rax";
+    public final static String RBX = "rbx";
+    public final static String RCX = "rcx";
+    public final static String RDX = "rdx";
     public final static String JMP = "\tjmp";
     public final static String CMP = "\tcmp";
     public final static String JE = "\tje";

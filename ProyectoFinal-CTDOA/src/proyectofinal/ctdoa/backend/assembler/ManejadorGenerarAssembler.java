@@ -42,14 +42,11 @@ public class ManejadorGenerarAssembler {
         maoi.nuevoAnalisis();
         mam.nuevoAnalisis();
         mapd.nuevoAnalisis();
-        assembler += Constantes.ENCABEZADO_ASM;
-        System.out.println("E " + Constantes.ENCABEZADO_ASM);
+        ///////////////////////////////////////
         String normalData = "";
-        normalData += mat.dataTemp(listaTemp);
-        normalData += Constantes.ENCABEZADO;
-        normalData += Constantes.FIN_PROGRAMA;
-        //Area Programa Principal
+        assembler += Constantes.ENCABEZADO_ASM;
         for (Cuarteto cuarteto : lista) {
+        // Area Programa Principal
             String salida = "";
             if (cuarteto.getOperador() != null) {
                 if (cuarteto.getOperador().equalsIgnoreCase(Constantes.MAS) ||
@@ -72,14 +69,14 @@ public class ManejadorGenerarAssembler {
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.IMPRIMIR_CONSOLA)) {
                     if (cuarteto.getOperando1().toString().equalsIgnoreCase("")
                             || cuarteto.getOperando1().toString().equalsIgnoreCase("\"\"")) {
-                        salida += mam.addData("\" \"");
+                        salida += mam.addData("\" \"", null, false);
                     } else {
-                        salida += mam.addData(cuarteto.getOperando1().toString());
+                        salida += mam.addData(cuarteto.getOperando1().toString(), null, false);
                     }
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.PROCEDIMIENTO)) {
                     salida += maoi.imprimirSubRutina(cuarteto);
                 } else if (cuarteto.getOperador().equalsIgnoreCase("$FinProcedimiento")) {
-                    salida += mam.addData("\" \"");
+                    salida += mam.addData("\" \"", null, false);
                     salida += maoi.finSubRutina(cuarteto);
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.COMENTARIO)) {
                     salida += maoi.comentario(cuarteto);
@@ -90,7 +87,8 @@ public class ManejadorGenerarAssembler {
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.SCANF)){
                     salida += mapd.pedirDatos(cuarteto);
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.PRINTF)){
-                    salida += mam.addData(cuarteto.getOperando1().getId());
+                    cuarteto.getOperando1().getValor(); //%d, %c, %f
+                    salida += mam.addData(cuarteto.getOperando1().getId(), cuarteto.getOperando1().getValor().toString(), true);
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.GETCH)) {
                     salida += maoi.getch(cuarteto);
                 } else if (cuarteto.getOperador().equalsIgnoreCase(Constantes.CLRSCR)) {
@@ -106,10 +104,13 @@ public class ManejadorGenerarAssembler {
                 salida += maoi.asignacion(cuarteto);
             }
             normalData += salida;
-        } 
+        }
+        String aux = mat.dataTemp(listaTemp);
+        aux += mat.getBss();
+        aux += Constantes.ENCABEZADO;
+        aux += normalData;
         assembler += mam.getMsg();
-        assembler += normalData;
-        assembler += Constantes.FIN;
+        assembler += aux;
         assembly = assembler;
     }
 }

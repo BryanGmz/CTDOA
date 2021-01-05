@@ -120,10 +120,10 @@ public class TablaSimbolos {
     }
     
     public void print(){
-        System.out.println("\n\nTABLA DE SIMBOLOS");
-        for (Simbolo simbolo : simbolos) {
+        /* System.out.println("\n\nTABLA DE SIMBOLOS");
+        simbolos.forEach((simbolo) -> {
             System.out.println("" + simbolo.getId() + "\t\t\t" + simbolo.getAmbito()+ "\t\t\t" + simbolo.getTipo() + "\t\t\t" + simbolo.getValor());
-        }
+        }); */
     }
     
 }

@@ -46,7 +46,7 @@ parser code {:
     public void syntax_error(Symbol s){
         try {
             msVB_PY.errorSintax(s.left, s.right, s.value, 
-                "Uf, error sintactico cerca de la linea y columna indicada porfavor revisa que el token\n "
+                "Uf, error sintactico en el codigo Python, cerca de la linea y columna indicada porfavor revisa que el token\n "
                         + "\t\tidicado corresponda a la declaracion de instruccion correspondiente. Vuelve a intentarlo."
             );
         } catch (Exception e) {
@@ -72,7 +72,7 @@ terminal String     ID;
 
 /* No Terminales */ 
 
-non terminal inicio;
+non terminal inicio, ppa;
 non terminal estructuras_def, space;
 non terminal return, return_dato, def_p;
 non terminal operaciones_aritmeticas;
@@ -153,15 +153,26 @@ return ::=
             RESULT = null;
         }    
     :}
-    | error:e
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion return, no se esperaba el token indicado.");:}
+    | error:a return_dato:e
+    {:  
+        parser.msVB_PY.errorSintax(aleft, aright, a, "Error en la sintaxis de la instruccion return. Se esperaba el token << RETURN >>");
+        if(e != null) {
+            if (parser.mr.compararReturn((Simbolo) e, eleft, eright)){
+                RESULT = new Simbolo(Constantes.RETURN_VAR, e);
+            } else {
+                RESULT = null;
+            }
+        } else {
+            RESULT = null;
+        }    
+    :}
+    | RETURN error:e
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en la sintaxis de la instruccion return. Se esperaba una operacion aritmetica, identificador, numero.");:}
 ;
 
 return_dato ::=
     CARACTER:e                              {:RESULT = new Simbolo(Constantes.CHAR_VAR_VB_PY, e);:}
     | operaciones_aritmeticas:e             {:RESULT = e;:}
-    | error:e
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en los datos que se asignaran, no se esperaba el token indicado.");:}
 ;
 
 /******************************* Operaciones Aritmeticas ******************************/
@@ -205,11 +216,15 @@ operaciones_logicas ::=
     | tipos_comparacion:a MENOR_IGUAL:c tipos_comparacion:e             {:RESULT = parser.msVB_PY.comprobarOperacionesLogicas(a, e, 4, cleft, cright);:}
     | tipos_comparacion:a MAYOR:c tipos_comparacion:e                   {:RESULT = parser.msVB_PY.comprobarOperacionesLogicas(a, e, 5, cleft, cright);:}
     | tipos_comparacion:a MAYOR_IGUAL:c tipos_comparacion:e             {:RESULT = parser.msVB_PY.comprobarOperacionesLogicas(a, e, 6, cleft, cright);:}
+    | tipos_comparacion:c error:a tipos_comparacion:e             
+    {:parser.msVB_PY.errorSintax(aleft, aright, a, "Error sintactico en la instruccion de operaciones de comparacion. Se esperaba algun token como: << <, >, <=.>=, <>, = >>");:}
 ;
 
 tipos_comparacion ::=
     operaciones_aritmeticas:e                   {:RESULT = e;:}
     | CARACTER:e                                {:RESULT = new Simbolo(Constantes.CHAR_VAR_VB_PY, e);:}
+    | error:a
+    {:parser.msVB_PY.errorSintax(aleft, aright, a, "Error sintactico en la instruccion de operaciones de comparacion. Se esperaba algun token como: << Identificador, Operacion Aritmetica, Caracter >>");:}
 ;
 
 /********************************** Condicionales *************************************/
@@ -219,11 +234,11 @@ condicional ::=
     | error:e SALTO                           
     {:
         parser.mc.nuevoAnalisisBoolean();  
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la instruccion condicional. Se esperaba una operacion condicional como: << OP1 OperadorComparacion OP2 >>");:}
     | error:e INDENT
     {:
         parser.mc.nuevoAnalisisBoolean();  
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la instruccion condicional. Se esperaba una operacion condicional como: << OP1 OperadorComparacion OP2 >>");:}
 
 ;
 
@@ -248,8 +263,19 @@ condicional_and ::=
 ;
 
 condicional_not ::=
-    NOT PARENTESIS_A operaciones_logicas:a PARENTESIS_C         {:RESULT = parser.msVB_PY.comprobacionCondicional(a, true, 3, aleft, aright);:}
-    | operaciones_logicas:e                                     {:parser.mc.gotoEscribir(); RESULT = e;:}
+    NOT ppa operaciones_logicas:a PARENTESIS_C          {:RESULT = parser.msVB_PY.comprobacionCondicional(a, true, 3, aleft, aright);:}
+    | NOT ppa operaciones_logicas:a error:e               
+    {:
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional not. Se esperaba el token: << ) >>");
+        RESULT = parser.msVB_PY.comprobacionCondicional(a, true, 3, aleft, aright);
+    :}
+    | operaciones_logicas:e                             {:parser.mc.gotoEscribir(); RESULT = e;:}
+;
+
+ppa ::=
+    PARENTESIS_A
+    | error:x
+    {:parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion indicada. Se esperaba el token: << ( >>, no el token indicado.");:}
 ;
 
 /********************************** Concatenacion *************************************/
@@ -258,14 +284,25 @@ concatenacion ::=
     concatenacion:a MAS concatenacion:e                         {:parser.msVB_PY.concatencacion(a, e);:}
     | concatenacion:a COMA concatenacion:e                      {:parser.msVB_PY.concatencacion(a, e);:}
     | CADENA:e                                                  {:parser.mc.imprimir(new Simbolo(null, e)); RESULT = e;:}
-    | estruct:e                                                 {:parser.mc.imprimirPrintf(0, (Simbolo) e); RESULT = e;:}
-    | error:e                                                   {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la concatenacion de cadenas, de la instruccion PRINT.");:}
+    | estruct:e                                                 {:parser.mc.imprimirPrintf(0, (Simbolo) e, -1); RESULT = e;:}
+    | error:e                                                   
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la concatenacion de cadenas, de la instruccion de imprimir mensajes en la terminal. Se esperaba una concatenacion de cadenas.");:}
 ;
 
 /******************************** Mensaje en Pantalla *********************************/
 
 mensaje_terminal ::=
-    PRINT PARENTESIS_A concatenacion:e PARENTESIS_C           {:parser.mc.imprimirNuevaLinea(); RESULT = e;:}
+    PRINT ppa concatenacion:e PARENTESIS_C              {:parser.mc.imprimirNuevaLinea(); RESULT = e;:}
+    | error:o ppa concatenacion:e PARENTESIS_C            
+    {:
+        parser.msVB_PY.errorSintax(oleft, oright, o, "Error sintactico en la intruccion de mensaje terminal. Se esperaba el token: << print >>");
+        parser.mc.imprimirNuevaLinea(); RESULT = e;
+    :}
+    | PRINT ppa concatenacion:e error:o                   
+    {:
+        parser.msVB_PY.errorSintax(oleft, oright, o, "Error sintactico en la intruccion de mensaje terminal. Se esperaba el token: << ) >>");
+        parser.mc.imprimirNuevaLinea(); RESULT = e;
+    :}
 ;
 
 /***************************** Asignacion de Variables ********************************/
@@ -279,11 +316,26 @@ asignacion_variables ::=
             RESULT = e;
         }
     :}
+    | ID:a error:o asignacion:e          
+    {:  
+        parser.msVB_PY.errorSintax(oleft, oright, o, "Error sintactico en la intruccion asignacion de variables. Se esperaba el token: << = >>");
+        if(e != null) {
+            RESULT = new Simbolo(((Simbolo) e).getTipo(), ((Simbolo) e), a);
+        } else { 
+            RESULT = e;
+        }
+    :}
+    | error:o IGUAL asignacion:e          
+    {:  
+       parser.msVB_PY.errorSintax(oleft, oright, o, "Error sintactico en la intruccion asignacion de variables. Se esperaba el token: << Identificador >>");
+    :}
 ;
 
 asignacion ::=
     return_dato:e                   {:RESULT = e;:}
     | solicitud_datos:e             {:RESULT = e;:}
+    | error:e
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de valores a asignar. Se esperaba: << Identificador, Numero, Operacion Aritmetica >>.");:}
 ;
 
 /******************************* Solicitud de Datos ***********************************/
@@ -298,9 +350,9 @@ solicitud_p ::=
     PARENTESIS_A CADENA:e PARENTESIS_C             {:parser.mc.imprimir(new Simbolo(null, e));:}
     | PARENTESIS_A PARENTESIS_C
     | error:e PARENTESIS_C
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de solicitud de datos, no se esperaba una cadena.");:}
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion solicitud de datos. Se esperaba el token: << ) >>.");:}
     | error:e 
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de solicitud de datos, no se esperaba una cadena.");:}
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion solicitud de datos. Se esperaba una estructura como: << ( Texto ) >>.");:}
 ;
 
 /************************************* While ******************************************/
@@ -312,6 +364,15 @@ while_n ::=
 while_p ::=
     while_n:w condicional:a DOS_PUNTOS INDENT
     {:
+        parser.mc.nuevoAnalisisBoolean();
+        parser.mc.escribirEtiquetasInicio(false);
+        parser.mc.addEtiquetasEstructuras();
+        ((While) w).setA(a);
+        RESULT = w;
+    :}
+    | while_n:w condicional:a DOS_PUNTOS error:e INDENT
+    {:
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instrucion while. Se esperaba el token: << Indent >>, no el token indicado.");
         parser.mc.nuevoAnalisisBoolean();
         parser.mc.escribirEtiquetasInicio(false);
         parser.mc.addEtiquetasEstructuras();
@@ -348,8 +409,27 @@ var ::=
 ;
 
 for_p ::=
-    FOR var:a IN RANGE PARENTESIS_A rango:e PARENTESIS_C DOS_PUNTOS INDENT
-    {:RESULT = new For(e, (Simbolo) a, parser.mc.addForPY(a, e));:}
+    FOR var:a IN RANGE ppa rango:e PARENTESIS_C DOS_PUNTOS INDENT               {:RESULT = new For(e, (Simbolo) a, parser.mc.addForPY(a, e));:}
+    | FOR var:a IN RANGE ppa rango:e error:x DOS_PUNTOS INDENT
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << ) >>, no el token indicado.");
+        RESULT = new For(e, (Simbolo) a, parser.mc.addForPY(a, e));
+    :}
+    | FOR var:a error:x IN RANGE ppa rango:e PARENTESIS_C DOS_PUNTOS INDENT
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << in >>, no el token indicado.");
+        RESULT = new For(e, (Simbolo) a, parser.mc.addForPY(a, e));
+    :}
+    | FOR var:a IN error:x RANGE ppa rango:e PARENTESIS_C DOS_PUNTOS INDENT
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << range >>, no el token indicado.");
+        RESULT = new For(e, (Simbolo) a, parser.mc.addForPY(a, e));
+    :}
+    | error:x var:a IN RANGE ppa rango:e PARENTESIS_C DOS_PUNTOS INDENT
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << for >>, no el token indicado.");
+        RESULT = new For(e, (Simbolo) a, parser.mc.addForPY(a, e));
+    :}
 ;
 
 for ::=
@@ -396,6 +476,8 @@ rango ::=
         }
         RESULT = lista;
     :}
+    | error:x
+    {:parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura for. Se esperaba el token: << Identificador | Opearcion Aritmetica >>, no el token indicado.");:}
 ;
 
 /************************************ if **********************************************/
@@ -407,6 +489,20 @@ if ::=
     | ii:a DOS_PUNTOS INDENT
         estructuras_p:e                   
         SALTO                                   {:RESULT = parser.msVB_PY.crearEstructuraCondicional(e, a, 1); parser.mc.imprimirResto();:}
+    | ii:a DOS_PUNTOS error:x INDENT
+        estructuras_p:e
+    DEDENT                                      
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura if. Se esperaba el token: << Indent >>, no el token indicado.");
+        RESULT = parser.msVB_PY.crearEstructuraCondicional(e, a, 1); parser.mc.imprimirResto();
+    :}
+    | ii:a DOS_PUNTOS error:x INDENT
+        estructuras_p:e                   
+        SALTO                                   
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura if. Se esperaba el token: << Indent >>, no el token indicado.");
+        RESULT = parser.msVB_PY.crearEstructuraCondicional(e, a, 1); parser.mc.imprimirResto();
+    :}
 ;
  
 ii ::=
@@ -428,6 +524,20 @@ else_if ::=
     | ie:e DOS_PUNTOS INDENT
         estructuras_p:a                         
         SALTO                                   {:RESULT = parser.msVB_PY.crearEstructuraCondicional(a, e, 2); parser.mc.imprimirResto();:}
+    | ie:e DOS_PUNTOS error:x INDENT
+        estructuras_p:a
+    DEDENT                                      
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura elif. Se esperaba el token: << Indent >>, no el token indicado.");
+        RESULT = parser.msVB_PY.crearEstructuraCondicional(a, e, 2); parser.mc.imprimirResto();
+    :}
+    | ie:e DOS_PUNTOS error:x INDENT
+        estructuras_p:a                         
+        SALTO                                   
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura elif. Se esperaba el token: << Indent >>, no el token indicado.");
+        RESULT = parser.msVB_PY.crearEstructuraCondicional(a, e, 2); parser.mc.imprimirResto();
+    :}
 ;
 
 else ::=
@@ -437,6 +547,20 @@ else ::=
     | ee DOS_PUNTOS INDENT
         estructuras:a                           
         SALTO                                   {:RESULT = parser.msVB_PY.crearEstructuraCondicional(a, false, 3); parser.mc.imprimirResto();:}
+    | ee DOS_PUNTOS error:x INDENT
+        estructuras_p:a                         
+    DEDENT                                      
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura else. Se esperaba el token: << Indent >>, no el token indicado.");
+        RESULT = parser.msVB_PY.crearEstructuraCondicional(a, false, 3); parser.mc.imprimirResto();
+    :}
+    | ee DOS_PUNTOS error:x INDENT
+        estructuras:a                           
+        SALTO                                   
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura else. Se esperaba el token: << Indent >>, no el token indicado.");
+        RESULT = parser.msVB_PY.crearEstructuraCondicional(a, false, 3); parser.mc.imprimirResto();
+    :}
 ;
 
 else_if_p ::=
@@ -470,6 +594,21 @@ estructura_if ::=
 def_p ::=
     DEF ID:a PARENTESIS_A parametros:e PARENTESIS_C DOS_PUNTOS INDENT   
     {:parser.mc.addCuartetoProcedimiento(2, a, "PY", e, Constantes.FLOAT_VAR_VB_PY);  RESULT = new Procedimiento(a, e);:}
+    | DEF ID:a PARENTESIS_A parametros:e PARENTESIS_C DOS_PUNTOS error:x INDENT   
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura def. Se esperaba el token: << Indent >>, no el token indicado.");
+        parser.mc.addCuartetoProcedimiento(2, a, "PY", e, Constantes.FLOAT_VAR_VB_PY);  RESULT = new Procedimiento(a, e);
+    :}
+    | DEF ID:a error:x PARENTESIS_A parametros:e PARENTESIS_C DOS_PUNTOS INDENT   
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura def. Se esperaba el token: << ( >>, no el token indicado.");
+        parser.mc.addCuartetoProcedimiento(2, a, "PY", e, Constantes.FLOAT_VAR_VB_PY);  RESULT = new Procedimiento(a, e);
+    :}
+    | DEF ID:a error:x parametros:e PARENTESIS_C DOS_PUNTOS INDENT   
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion de la estructura def. Se esperaba el token: << ( >>, no el token indicado.");
+        parser.mc.addCuartetoProcedimiento(2, a, "PY", e, Constantes.FLOAT_VAR_VB_PY);  RESULT = new Procedimiento(a, e);
+    :}
 ;
 
 def ::= //Comprobar si existe un return con los niveles 
@@ -519,13 +658,17 @@ parametros_p ::=
     | error:e                       
     {: 
         RESULT = new ArrayList<>();
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de parametros, no se esperaba el token indicado.");
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de parametros, no se esperaba el token indicado. Se espera una estructura: << ID >>.");
     :}
 ;
 
 llamada_fp ::=
     ID:a PARENTESIS_A param:e PARENTESIS_C 
     {:RESULT = parser.mbm.buscarMetodo("PY_", a, e, aleft, aright, 2, true);:}
+    | error:x PARENTESIS_A param:e PARENTESIS_C 
+    {:
+        parser.msVB_PY.errorSintax(xleft, xright, x, "Error sintactico en la instruccion del llamado a una funcion. Se esperaba el token: << Identificador >>, no el token indicado.");
+    :}
 ;
 
 param ::=
@@ -545,7 +688,7 @@ param ::=
     :} 
     | error:e     
     {: 
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros.");
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros. Se esperaba el token: << Identificador >>");
     :}
     | operaciones_aritmeticas:e                         {:RESULT = e;:} 
     | 
@@ -557,7 +700,7 @@ param_p ::=
     | error:e param_p:a
     {: 
         RESULT = a;
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros.");
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros. Se esperaba el token: << Identificador >>");
     :}
 ;
 
