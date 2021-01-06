@@ -211,6 +211,11 @@ public class FrameCTDOA extends javax.swing.JFrame {
 
         ejecutarAssembler.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
         ejecutarAssembler.setText("Ensamblador");
+        ejecutarAssembler.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ejecutarAssemblerActionPerformed(evt);
+            }
+        });
         menuEjecutar.add(ejecutarAssembler);
 
         menu.add(menuEjecutar);
@@ -403,6 +408,11 @@ public class FrameCTDOA extends javax.swing.JFrame {
         this.tablaSimbolos.llenarTabla();
         this.tablaSimbolos.setVisible(true);
     }//GEN-LAST:event_menuTablaSimbolosMouseClicked
+
+    private void ejecutarAssemblerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ejecutarAssemblerActionPerformed
+        // TODO add your handling code here:
+        ManejadorEjecutarCodigo.getInstancia().escribirCodigoEnsamblador();
+    }//GEN-LAST:event_ejecutarAssemblerActionPerformed
 
     public void addErrores(String error){
         if (textErrores.getText().isEmpty()) {

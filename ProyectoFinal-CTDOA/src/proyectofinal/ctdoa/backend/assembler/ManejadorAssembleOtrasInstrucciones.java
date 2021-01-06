@@ -191,12 +191,12 @@ public class ManejadorAssembleOtrasInstrucciones {
             temp = replaceStackHeapTemp(getch.getResultado().getId());
             if (getch.getResultado().getId().contains("stack")) {
                 ///////////////// mov rbx, temp #
-                salida += "\n" + Constantes.MOV + " " + Constantes.EAX + ", [" + temp + "]        ; Asignado el valor a un registro asg";
+                salida += "\n" + Constantes.MOV + "\t" + Constantes.EAX + ", [" + temp + "]        ; Asignado el valor a un registro asg";
                 ///////////////// [stack + rbx]
                 temp = "[stack + " + Constantes.EAX + " * 8]";
             } else {
                 ///////////////// mov rbx, temp #
-                salida += "\n" + Constantes.MOV + " " + Constantes.EAX + ", [" + temp + "]        ; Asignado el valor a un registro asg";
+                salida += "\n" + Constantes.MOV + "\t" + Constantes.EAX + ", [" + temp + "]        ; Asignado el valor a un registro asg";
                 ///////////////// [stack + rbx]
                 temp = "[heap + " + Constantes.EAX + " * 8]";
             }
@@ -277,12 +277,12 @@ public class ManejadorAssembleOtrasInstrucciones {
             temp = replaceStackHeapTemp(asg.getResultado().getId());
             if (asg.getResultado().getId().contains("stack")) {
                 ///////////////// mov rbx, temp #
-                regresar += "\n" + Constantes.MOV + " " + Constantes.EAX + ", [" + temp + "]        ; Asignado el valor a un registro asg";
+                regresar += "\n" + Constantes.MOV + "\t" + Constantes.EAX + ",\t[" + temp + "]        ; Asignado el valor a un registro asg";
                 ///////////////// [stack + rbx]
                 temp = "[stack + " + Constantes.EAX + " * 8]";
             } else {
                 ///////////////// mov rbx, temp #
-                regresar += "\n" + Constantes.MOV + " " + Constantes.EAX + ", [" + temp + "]        ; Asignado el valor a un registro asg";
+                regresar += "\n" + Constantes.MOV + "\t" + Constantes.EAX + ",\t[" + temp + "]        ; Asignado el valor a un registro asg";
                 ///////////////// [stack + rbx]
                 temp = "[heap + " + Constantes.EAX + " * 8]";
             }
@@ -290,7 +290,7 @@ public class ManejadorAssembleOtrasInstrucciones {
             ///////////////// [temp]
             temp = "[" + asg.getResultado().getId() + "]";
         }
-        regresar += "\n" + Constantes.MOV + " " + temp + ", " + Constantes.RBX + "      ; Asigando el valor del registro a un temporal";
+        regresar += "\n" + Constantes.MOV + "\t" + temp + ",\t" + Constantes.RBX + "      ; Asigando el valor del registro a un temporal";
         return regresar + "\n";
     }
     

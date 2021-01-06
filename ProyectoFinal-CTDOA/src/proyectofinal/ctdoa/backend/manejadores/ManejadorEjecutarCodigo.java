@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import proyectofinal.ctdoa.backend.assembler.ManejadorGenerarAssembler;
 
 /**
  *
@@ -35,14 +36,12 @@ public class ManejadorEjecutarCodigo {
         salidaC = salida;
     }
     
-    public void codigoEjecutarC(String ejecutar){
+    public void codigoEjecutar(String ejecutar, String ejecutable){
         try {
-//            String[] arreglo = {"-execute", ejecutar  + " &&  ./Salida"};
-            System.out.println("Ejecutar " + ejecutar);
             Runtime rt = Runtime.getRuntime();
             rt.exec(ejecutar);
             Thread.sleep(500);
-            rt.exec("gnome-terminal hold -e ./Salida");
+            rt.exec("gnome-terminal -- sh -c ./" + ejecutable);
         } catch (IOException | InterruptedException ex) {
             Logger.getLogger(ManejadorEjecutarCodigo.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -56,7 +55,30 @@ public class ManejadorEjecutarCodigo {
         } else {
             try {
                 escribirArchivoSalida("./Salida.c", salidaC);
-                codigoEjecutarC("gcc -lm Salida.c -o Salida");
+                codigoEjecutar("gcc -lm Salida.c -o Salida", "Salida");
+            } catch (IOException ex) {
+                Logger.getLogger(ManejadorEjecutarCodigo.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    public void escribirCodigoEnsamblador() throws InterruptedException{
+        String salidaEnsamblador = ManejadorGenerarAssembler.getInstancia().getAssembly();
+        if (salidaEnsamblador == null) {
+            JOptionPane.showMessageDialog(null, "Lo siento no has analizado algun, tipo de archivo.", "ERROR", JOptionPane.ERROR_MESSAGE);
+        } else if (salidaEnsamblador.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Lo siento no has analizado algun, tipo de archivo.", "ERROR", JOptionPane.ERROR_MESSAGE);
+        } else {
+            try {
+                //gnome-terminal -- sh -c nasm -f elf64 Arc.asm && gcc -no-pie Arc.o -o Arc && ./Arc
+                escribirArchivoSalida("./Arc.asm", salidaEnsamblador);
+                Runtime rt = Runtime.getRuntime();
+                rt.exec("nasm -f elf64 Arc.asm");
+                Thread.sleep(500);
+                rt.exec("gcc -no-pie Arc.o -o Arc");
+                Thread.sleep(500);
+                rt.exec("gnome-terminal -- sh -c ./Arc");
+                //codigoEjecutar("nasm -f elf64 Arc.asm && gcc -no-pie Arc.o -o Arc", "Arc");
             } catch (IOException ex) {
                 Logger.getLogger(ManejadorEjecutarCodigo.class.getName()).log(Level.SEVERE, null, ex);
             }

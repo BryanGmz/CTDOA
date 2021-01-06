@@ -64,19 +64,17 @@ public class ManejadorAssemblerMensajes {
                 salida = "\t" + tituloMensaje + " " + Constantes.DB + " \'" + mensaje.replace("\\ n", "").replace("\\n", "") +  " \',\t0          ; Inicializando la data del mensaje";
             }
             //len_contador
-            salida += "\n" + longitudMensaje + Constantes.SRC_MSG + tituloMensaje + "          ; Definiendo la longitud del mensaje";
+            //salida += "\n" + longitudMensaje + Constantes.SRC_MSG + tituloMensaje + "          ; Definiendo la longitud del mensaje";
             listaData.add(salida);
             return txtLinea(tituloMensaje, longitudMensaje.replaceFirst("\t", ""));
         }
     }
     
     public String txtLinea(String msg, String len){
-        return  "\n"
-                + Constantes.MOV + "\t" + Constantes.EDX + ",\t" + len + "            ; message length\n"
-                + Constantes.MOV + "\t" + Constantes.ECX + ",\t" + msg + "            ; message to write\n"
-                + Constantes.MOV + "\t" + Constantes.EBX + ",\t1" + "             ; file descriptor (stdout)\n"
-                + Constantes.MOV + "\t" + Constantes.EAX + ",\t4" + "             ; system call number (sys_write)\n"
-                + Constantes.INRRUPCION_80H + "                 ; call kernel\n";
+        return  "\n\n; Call printf \n"
+                + Constantes.MOV + "\t" + Constantes.RDI + ",\t" + msg + "\n"
+                + Constantes.MOV + "\tal" + ",\t0"
+                + "\n\tcall\tprintf";
     }
     
     public String txtPrintf(String format, String temp){
