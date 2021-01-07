@@ -167,7 +167,7 @@ return ::=
         }    
     :}
     | RETURN error:e
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en la sintaxis de la instruccion return. Se esperaba una operacion aritmetica, identificador, numero.");:}
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en la sintaxis de la instruccion return. Se esperaba: << Operacion aritmetica, identificador, numero>>.");:}
 ;
 
 return_dato ::=
@@ -254,7 +254,7 @@ condicional_or ::=
     condicional_or:a or:c condicional_or:e                      {:RESULT = parser.msVB_PY.comprobacionCondicional(a, e, 2, cleft, cright);:}
     | condicional_and:a                                         {:RESULT = a;:}
     | error:e
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional.");:}
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en las operacionaciones logicas, de la intruccion condicional. Se esperaba la estructura: << OP1 Operador Logico OP2 >>");:}
 ;
 
 condicional_and ::= 
@@ -405,7 +405,7 @@ while ::=
 var ::=
     ID:e                    {:RESULT = parser.msVB_PY.idPY((String) e, eleft, eright);:}
     | error:e
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de datos, de la instruccion for, no se esperaba el token indicado.");:}
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la declaracion de datos, de la instruccion for. Se esperaba el token: << Identificador >>");:}
 ;
 
 for_p ::=
@@ -658,7 +658,7 @@ parametros_p ::=
     | error:e                       
     {: 
         RESULT = new ArrayList<>();
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de parametros, no se esperaba el token indicado. Se espera una estructura: << ID >>.");
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de parametros, no se esperaba el token indicado. Se espera una estructura: << Param, Param_n ... >>.");
     :}
 ;
 
@@ -688,7 +688,7 @@ param ::=
     :} 
     | error:e     
     {: 
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros. Se esperaba el token: << Identificador >>");
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros. Se esperaba el token: << Param, Param_n ... >>");
     :}
     | operaciones_aritmeticas:e                         {:RESULT = e;:} 
     | 
@@ -700,7 +700,7 @@ param_p ::=
     | error:e param_p:a
     {: 
         RESULT = a;
-        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros. Se esperaba el token: << Identificador >>");
+        parser.msVB_PY.errorSintax(eleft, eright, e, "Error sintactico en la instruccion de llamada a una funcion, no se esperaba el token indicado para el reconocimiento de parametros. Se esperaba el token: << Param, Param_n ... >>");
     :}
 ;
 
@@ -717,9 +717,9 @@ estructuras ::=
         parser.mc.addYRemovePuntero(as, false);
     :}
     | error:e SALTO                                     
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada. \nEstructura esperada: << print || while || for || Asignacion de variables || If >>, se recupero hasta: << Salto de Linea >>");:}
     | error:e DEDENT                                        
-    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada.");:}
+    {:parser.msVB_PY.errorSintax(eleft, eright, e, "Error en el bloque de instrucciones de la estructura, por favor revisa la entrada en la linea y columna indicada. \nEstructura esperada: << print || while || for || Asignacion de variables || If >>, se recupero hasta: << dedent >>");:}
 ;
 
 estructuras_p ::=
