@@ -152,6 +152,8 @@ D = [0-9]
     
     ( "+" )             {/*System.out.println(yytext());*/return new Symbol(sym.MAS, yycolumn, yyline, yytext());}
     ( "MOD" )           {/*System.out.println(yytext());*/return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
+    ( "mod" )           {/*System.out.println(yytext());*/return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
+    ( "Mod" )           {/*System.out.println(yytext());*/return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
     ( "-" )             {/*System.out.println(yytext());*/return new Symbol(sym.MENOS, yycolumn, yyline, yytext());}
     ( "*" )             {/*System.out.println(yytext());*/return new Symbol(sym.POR, yycolumn, yyline, yytext());}
     ( "/" )             {/*System.out.println(yytext());*/return new Symbol(sym.DIV, yycolumn, yyline, yytext());}

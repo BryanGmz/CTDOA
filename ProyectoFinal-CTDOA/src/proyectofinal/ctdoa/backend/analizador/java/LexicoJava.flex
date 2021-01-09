@@ -108,6 +108,7 @@ D = [0-9]
     ( "/" )             {return new Symbol(sym.DIV, yycolumn, yyline, yytext());}
     ( "MOD" )             {return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
     ( "mod" )             {return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
+    ( "Mod" )             {return new Symbol(sym.MOD, yycolumn, yyline, yytext());}
 
     /* Operadores - Asignacion */
     

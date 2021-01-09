@@ -49,7 +49,7 @@ public class ManejadorAssemblerTemporales {
                 + "\n"
                 + "\tformatCharScanf    db  \'%c\',\t10,\t0         ; Declarando el formato scanf char\n"
                 + "\tformatIntScanf     db  \'%d\\n\',\t10,\t0         ; Declarando el formato scanf int\n"
-                + "\tformatFloatScanf   db  \'%lf\',\t10,\t0         ; Declarando el formato scanf float\n"
+                + "\tformatFloatScanf   db  \'%lf\\n\',\t10,\t0         ; Declarando el formato scanf float\n"
                 + "\n"
                 + "\tgetch              db  0,  0       ;"
                 + "\n"

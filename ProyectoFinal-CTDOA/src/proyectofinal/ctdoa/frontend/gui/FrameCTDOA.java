@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -379,6 +381,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(null, "No se a seleccionado ningun archivo.", "INFORMACION", JOptionPane.INFORMATION_MESSAGE);
                 }
             } catch (Exception ex) {
+                ex.printStackTrace();
                 System.out.println(ex.toString());
                 JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
             }   
@@ -410,8 +413,12 @@ public class FrameCTDOA extends javax.swing.JFrame {
     }//GEN-LAST:event_menuTablaSimbolosMouseClicked
 
     private void ejecutarAssemblerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ejecutarAssemblerActionPerformed
-        // TODO add your handling code here:
-        ManejadorEjecutarCodigo.getInstancia().escribirCodigoEnsamblador();
+        try {
+            // TODO add your handling code here:
+            ManejadorEjecutarCodigo.getInstancia().escribirCodigoEnsamblador();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(FrameCTDOA.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_ejecutarAssemblerActionPerformed
 
     public void addErrores(String error){

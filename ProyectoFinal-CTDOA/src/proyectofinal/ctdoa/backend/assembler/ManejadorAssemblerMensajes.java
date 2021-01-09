@@ -61,24 +61,35 @@ public class ManejadorAssemblerMensajes {
             if (mensaje.contains("\\ n")) {
                 salida = "\t" + tituloMensaje + " " + Constantes.DB + " 10, \'" + mensaje.replace("\\ n", "").replace("\\n", "") + " \',\t0          ; Inicializando la data del mensaje";
             } else {
-                salida = "\t" + tituloMensaje + " " + Constantes.DB + " \'" + mensaje.replace("\\ n", "").replace("\\n", "") +  " \',\t0          ; Inicializando la data del mensaje";
+                salida = "\t" + tituloMensaje + " " + Constantes.DB + " \' " + mensaje.replace("\\ n", "").replace("\\n", "") +  " \',\t0          ; Inicializando la data del mensaje";
             }
             //len_contador
-            //salida += "\n" + longitudMensaje + Constantes.SRC_MSG + tituloMensaje + "          ; Definiendo la longitud del mensaje";
+            salida += "\n" + longitudMensaje + Constantes.SRC_MSG + tituloMensaje + "          ; Definiendo la longitud del mensaje";
             listaData.add(salida);
             return txtLinea(tituloMensaje, longitudMensaje.replaceFirst("\t", ""));
         }
     }
     
     public String txtLinea(String msg, String len){
-        return  "\n\n; Call printf \n"
+        String salida = "\n\n; Call printf \n"
                 + Constantes.MOV + "\t" + Constantes.RDI + ",\t" + msg + "\n"
-                + Constantes.MOV + "\tal" + ",\t0"
+                + Constantes.MOV + "\tal" + ",\t" + len
                 + "\n\tcall\tprintf";
+        //if (!ManejadorAssembleOtrasInstrucciones.getInstancia().getSubRutinaActual().equalsIgnoreCase("main")) {
+          //  salida += "\n\n\tadd\trsp,\t8";
+        //}
+        return  salida; 
+         /* return  "\n"
+                + Constantes.MOV + "\t" + Constantes.EDX + ",\t" + len + "            ; message length\n"
+                + Constantes.MOV + "\t" + Constantes.ECX + ",\t" + msg + "            ; message to write\n"
+                + Constantes.MOV + "\t" + Constantes.EBX + ",\t1" + "             ; file descriptor (stdout)\n"
+                + Constantes.MOV + "\t" + Constantes.EAX + ",\t4" + "             ; system call number (sys_write)\n"
+                + Constantes.INRRUPCION_80H + "                 ; call kernel\n"; */
     }
     
     public String txtPrintf(String format, String temp){
         String retornar = "\n\t; Call printf ";
+        boolean flotante = false;
         if (temp.contains("temp")) {
             temp = "[" + temp + "]";
         }
@@ -94,11 +105,16 @@ public class ManejadorAssemblerMensajes {
             case "\" %f \", ":
                 retornar += "\n\tmovsd\txmm0,\t" + temp + "";
                 retornar += "\n" + Constantes.MOV + "\t" + Constantes.RDI + ",\tformatFloatPrintf";
+                flotante = true;
                 break;
             default:
                 return "";
         } 
-        retornar += "\n\txor\t" + Constantes.RAX + ",\t" + Constantes.RAX;
+        if (flotante) {
+            retornar += "\n\tmov\t" + Constantes.RAX + ",\t1";
+        } else {
+            retornar += "\n\txor\t" + Constantes.RAX + ",\t" + Constantes.RAX;
+        }
         retornar += "\n\t" + Constantes.CALL + "\tprintf";
         return retornar;
     }
