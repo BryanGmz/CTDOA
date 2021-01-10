@@ -58,10 +58,10 @@ public class ManejadorAssemblerMensajes {
             //msg_contador db "MSG", 10, 13
             String mensaje = msg.replace("\"", "");
             String salida;
-            if (mensaje.contains("\\ n")) {
+            if (mensaje.contains("\\ n") || mensaje.contains("\\n") || mensaje.contains("\n")) {
                 salida = "\t" + tituloMensaje + " " + Constantes.DB + " 10, \'" + mensaje.replace("\\ n", "").replace("\\n", "") + " \',\t0          ; Inicializando la data del mensaje";
             } else {
-                salida = "\t" + tituloMensaje + " " + Constantes.DB + " \' " + mensaje.replace("\\ n", "").replace("\\n", "") +  " \',\t0          ; Inicializando la data del mensaje";
+                salida = "\t" + tituloMensaje + " " + Constantes.DB + " \'" + mensaje.replace("\\ n", "").replace("\\n", "") +  " \',\t0          ; Inicializando la data del mensaje";
             }
             //len_contador
             salida += "\n" + longitudMensaje + Constantes.SRC_MSG + tituloMensaje + "          ; Definiendo la longitud del mensaje";
@@ -71,13 +71,18 @@ public class ManejadorAssemblerMensajes {
     }
     
     public String txtLinea(String msg, String len){
-        String salida = "\n\n; Call printf \n"
-                + Constantes.MOV + "\t" + Constantes.RDI + ",\t" + msg + "\n"
-                + Constantes.MOV + "\tal" + ",\t" + len
+        String salida = "";
+         if (!ManejadorAssembleOtrasInstrucciones.getInstancia().getSubRutinaActual().equalsIgnoreCase("main")) {
+            salida += "\n\tsub\trsp,\t8\n";
+        }
+        salida += "\n\n; Call printf \n"
+                + Constantes.MOV + "\t" + Constantes.RDI + ",\tformatStringPrintf\n"
+                + Constantes.MOV + "\t" + Constantes.RSI + ",\t" + msg + "\n"
+                + Constantes.MOV + "\t" + Constantes.RAX + ",\t0"
                 + "\n\tcall\tprintf";
-        //if (!ManejadorAssembleOtrasInstrucciones.getInstancia().getSubRutinaActual().equalsIgnoreCase("main")) {
-          //  salida += "\n\n\tadd\trsp,\t8";
-        //}
+        if (!ManejadorAssembleOtrasInstrucciones.getInstancia().getSubRutinaActual().equalsIgnoreCase("main")) {
+            salida += "\n\n\tadd\trsp,\t8";
+        }
         return  salida; 
          /* return  "\n"
                 + Constantes.MOV + "\t" + Constantes.EDX + ",\t" + len + "            ; message length\n"
@@ -89,9 +94,13 @@ public class ManejadorAssemblerMensajes {
     
     public String txtPrintf(String format, String temp){
         String retornar = "\n\t; Call printf ";
+        String intf = "";
         boolean flotante = false;
         if (temp.contains("temp")) {
             temp = "[" + temp + "]";
+        }
+        if (!ManejadorAssembleOtrasInstrucciones.getInstancia().getSubRutinaActual().equalsIgnoreCase("main")) {
+            retornar += "\n\tsub\trsp,\t8\n";
         }
         switch (format) {
             case "\" %c \", ":
@@ -106,6 +115,7 @@ public class ManejadorAssemblerMensajes {
                 retornar += "\n\tmovsd\txmm0,\t" + temp + "";
                 retornar += "\n" + Constantes.MOV + "\t" + Constantes.RDI + ",\tformatFloatPrintf";
                 flotante = true;
+                intf = txtPrintf("\" %d \", ", temp.replace("[", "").replace("]", ""));
                 break;
             default:
                 return "";
@@ -116,6 +126,12 @@ public class ManejadorAssemblerMensajes {
             retornar += "\n\txor\t" + Constantes.RAX + ",\t" + Constantes.RAX;
         }
         retornar += "\n\t" + Constantes.CALL + "\tprintf";
+         if (!ManejadorAssembleOtrasInstrucciones.getInstancia().getSubRutinaActual().equalsIgnoreCase("main")) {
+            retornar += "\n\n\tadd\trsp,\t8";
+        }
+        if (flotante) {
+            retornar = intf + retornar;
+        }
         return retornar;
     }
 }

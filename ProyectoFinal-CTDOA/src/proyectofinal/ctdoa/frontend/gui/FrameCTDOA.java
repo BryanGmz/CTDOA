@@ -381,7 +381,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(null, "No se a seleccionado ningun archivo.", "INFORMACION", JOptionPane.INFORMATION_MESSAGE);
                 }
             } catch (Exception ex) {
-                ex.printStackTrace();
+                //ex.printStackTrace();
                 System.out.println(ex.toString());
                 JOptionPane.showMessageDialog(null, "Errores en el analisis de la entrada, no se a construido el codigo tres direcciones con lo que se a leido.", "ERROR", JOptionPane.ERROR_MESSAGE);
             }   
