@@ -350,6 +350,7 @@ public class FrameCTDOA extends javax.swing.JFrame {
         if(pestañas != null && !pestañas.isEmpty()) {
             try {
                 if (!pestañas.get(0).getTextArea().getText().isEmpty()) {
+                    pestañaActual = pestañas.get(0);
                     ManejadorCTD mctd = ManejadorCTD.getInstancia();
                     ManejadorCTDEjecutable mctde =  ManejadorCTDEjecutable.getInstancia();
                     ManejadorInstancias manejadorInstancias = ManejadorInstancias.getInstance();
