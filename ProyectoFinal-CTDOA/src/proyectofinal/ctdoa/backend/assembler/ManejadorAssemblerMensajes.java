@@ -48,7 +48,7 @@ public class ManejadorAssemblerMensajes {
         if (printf) {
             return txtPrintf(print, msg);
         } else {
-            if (msg.equalsIgnoreCase("\"\"") ||msg.equalsIgnoreCase("\" \"") || msg.isBlank() /*|| msg.equalsIgnoreCase("\\n") || msg.equalsIgnoreCase("\"\\n\"")*/) {
+            if (msg.equalsIgnoreCase("\"\"") ||msg.equalsIgnoreCase("\" \"") || msg.isEmpty()/*|| msg.equalsIgnoreCase("\\n") || msg.equalsIgnoreCase("\"\\n\"")*/) {
                 return "";
             }
              //msg_1 
